@@ -22,3 +22,22 @@ CREATE TABLE Purchases (
     pid INT NOT NULL REFERENCES Products(id),
     time_purchased timestamp without time zone NOT NULL DEFAULT (current_timestamp AT TIME ZONE 'UTC')
 );
+
+-- Social / Feedback tables --
+CREATE TABLE IF NOT EXISTS product_reviews (
+  product_review_id SERIAL PRIMARY KEY,
+  product_id INT NOT NULL REFERENCES Products(id),
+  user_id    INT NOT NULL REFERENCES Users(id),
+  rating     INT CHECK (rating BETWEEN 1 AND 5),
+  body       TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS seller_reviews (
+  seller_review_id SERIAL PRIMARY KEY,
+  seller_id  INT NOT NULL REFERENCES Users(id),
+  user_id    INT NOT NULL REFERENCES Users(id),
+  rating     INT CHECK (rating BETWEEN 1 AND 5),
+  body       TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
