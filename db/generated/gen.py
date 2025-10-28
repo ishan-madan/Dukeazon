@@ -66,6 +66,29 @@ def gen_purchases(num_purchases, available_pids):
     return
 
 
+def gen_product_sellers(num_sellers=50, num_products=2000, max_listings_per_seller=50):
+    with open('ProductSeller.csv', 'w', newline='') as f:
+        writer = get_csv_writer(f)
+        print('ProductSeller...', end=' ', flush=True)
+
+        listing_id = 0
+        for seller_id in range(num_sellers):
+            num_listings = fake.random_int(min=5, max=max_listings_per_seller)
+            listed_products = fake.random_elements(elements=list(range(num_products)),
+                                                  length=num_listings, unique=True)
+            for product_id in listed_products:
+                price = f'{fake.random_int(min=5, max=500)}.{fake.random_int(max=99):02}'
+                quantity = fake.random_int(min=1, max=100)
+                is_active = fake.random_element(elements=('true', 'false'))
+                writer.writerow([seller_id, product_id, price, quantity, is_active])
+                listing_id += 1
+
+            if seller_id % 5 == 0:
+                print(f'{seller_id}', end=' ', flush=True)
+        print(f'{num_sellers} sellers generated; {listing_id} listings total')
+
+
 gen_users(num_users)
 available_pids = gen_products(num_products)
 gen_purchases(num_purchases, available_pids)
+gen_product_sellers(num_sellers=100, num_products=num_products, max_listings_per_seller=30)
