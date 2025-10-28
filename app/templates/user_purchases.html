@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mt-4 mb-3">My Purchases</h2>
+
+{% if purchases %}
+  <table class="table table-striped mt-3">
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Image</th>
+      <th>Price</th>
+      <th>Purchased At</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in purchases %}
+    <tr>
+      <td>{{ p.product_name }}</td>
+      <td>
+        {% if p.image_url %}
+            <a href="{{ p.image_url }}" target="_blank">
+            <img src="{{ p.image_url }}" alt="{{ p.product_name }}"
+                style="width:100px; height:auto; border-radius:8px;">
+            </a>
+        {% else %}
+          <img src="https://via.placeholder.com/100?text=No+Image" alt="No image">
+        {% endif %}
+      </td>
+      <td>${{ '%.2f'|format(p.product_price) }}</td>
+      <td>{{ p.time_purchased.strftime("%b %d, %Y, %I:%M %p") }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p>You haven’t made any purchases yet.</p>
+{% endif %}
+
+<a href="{{ url_for('index.index') }}" class="btn btn-primary mt-3">Back Home</a>
+{% endblock %}
