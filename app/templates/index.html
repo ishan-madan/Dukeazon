@@ -93,4 +93,29 @@
 {% endif %}
 {% endif %}
 
+
+<br><br>
+
+{% if current_user.is_authenticated %}
+<h2>Search Seller Inventory</h2>
+<form id="seller-search-form" onsubmit="redirectToSellerInventory(event)">
+  <div class="form-group">
+    <label for="seller-id">Seller ID:</label>
+    <input type="number" class="form-control" id="seller-id" placeholder="Enter Seller ID" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+<script>
+function redirectToSellerInventory(event) {
+    event.preventDefault();
+    const sellerId = document.getElementById('seller-id').value;
+    if(sellerId) {
+        window.location.href = `/sellers/${sellerId}/inventory`;
+    }
+}
+</script>
+{% endif %}
+
+
 {% endblock %}
