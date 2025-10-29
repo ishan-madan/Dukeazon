@@ -25,58 +25,34 @@
 </table>
 
 <br><br>
+
 {% if current_user.is_authenticated %}
-<h2>Your recent purchases:</h2>
-<table class='table table-hover table-bordered container'>
-  <thead class="thead-dark">
-    <tr>
-      <th scope="col">Purchase ID</th>
-      <th scope="col">Product Name</th>
-      <th scope="col">Price</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for purchase in purchase_history%}
-      <tr>
-        <th scope="row">{{purchase.id}}</th>
-        <td>{{purchase.pid}}</td>
-        <td>{{purchase.time_purchased}}</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+  <h2>View Your Cart</h2>
+  <button class="btn btn-primary mt-3"
+          onclick="window.location.href='/cart/{{ current_user.id }}'">
+    Go to My Cart
+  </button>
+
 {% else %}
-<p><a href="{{ url_for('users.login') }}">Log in</a> to see your purchase history!</p>
+  <p>
+    <a href="{{ url_for('users.login') }}">Log in</a> to see your purchase history or view your cart.
+  </p>
 
-<h2>View Cart</h2>
-<input id="userId" type="number" placeholder="Enter user ID">
-<button onclick="getCart()">View Cart</button>
+  <h2 class="mt-4">View Cart</h2>
+  <div class="input-group mb-3" style="max-width: 400px;">
+    <input id="userId" type="number" class="form-control" placeholder="Enter user ID">
+    <button class="btn btn-primary" type="button" onclick="viewCart()">View Cart</button>
+  </div>
 
-<table id="cartTable">
-  <tr><th>Product</th><th>Price</th><th>Quantity</th></tr>
-</table>
-
-<script>
-async function getCart() {
-  const uid = document.getElementById('userId').value;
-  if (!uid) { alert('Enter user ID'); return; }
-
-  const res = await fetch(`/cart?user_id=${uid}`);
-  const data = await res.json();
-
-  const table = document.getElementById('cartTable');
-  table.innerHTML = '<tr><th>Product</th><th>Price</th><th>Quantity</th></tr>';
-
-  data.forEach(item => {
-    const row = `<tr>
-      <td>${item.name}</td>
-      <td>${item.price}</td>
-      <td>${item.quantity}</td>
-    </tr>`;
-    table.innerHTML += row;
-  });
-}
-</script>
+  <script>
+    function viewCart() {
+      if (id) {
+        window.location.href = `/cart/0`;
+      } else {
+        alert('Please enter a valid user ID.');
+      }
+    }
+  </script>
 {% endif %}
 
 <br><br>

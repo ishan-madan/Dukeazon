@@ -27,16 +27,3 @@ def index():
                            avail_products=products,
                            purchase_history=purchases)
 
-@bp.route('/cart', methods=['GET'])
-def cart():
-    user_id = request.args.get('user_id', type=int)
-    if not user_id:
-        return jsonify({"error": "Missing user_id"}), 400
-
-    items = Cart.get_by_user(user_id)
-    return jsonify([{
-        "product_id": i.product_id,
-        "name": i.name,
-        "price": i.price,
-        "quantity": i.quantity
-    } for i in items])
