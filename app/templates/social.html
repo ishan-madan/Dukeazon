@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br><br>
+
+<h2>Recent Feedback</h2>
+
+{% if need_login %}
+  <p><a href="{{ url_for('users.login') }}">Log in</a> to see your recent product/seller reviews.</p>
+{% else %}
+  {% if items|length == 0 %}
+    <p>No recent reviews yet.</p>
+  {% else %}
+    <table class="table table-hover table-bordered container">
+      <thead class="thead-dark">
+        <tr>
+          <th scope="col">Type</th>
+          <th scope="col">Target ID</th>
+          <th scope="col">Rating</th>
+          <th scope="col">Comment</th>
+          <th scope="col">When</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in items %}
+        <tr>
+          <th scope="row">{{ r.type }}</th>
+          <td>{{ r.target_id }}</td>
+          <td>{{ r.rating }}</td>
+          <td>{{ r.body }}</td>
+          <td>{{ r.created_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+{% endif %}
+{% endblock %}
