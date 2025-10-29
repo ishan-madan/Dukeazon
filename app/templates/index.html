@@ -44,30 +44,105 @@
 </div>
 
 <br><br>
+
 {% if current_user.is_authenticated %}
-<h2>Your recent purchases:</h2>
+  <h2>View Your Cart</h2>
+  <button class="btn btn-primary mt-3"
+          onclick="window.location.href='/cart/{{ current_user.id }}'">
+    Go to My Cart
+  </button>
+
+{% else %}
+  <p>
+    <a href="{{ url_for('users.login') }}">Log in</a> to see your purchase history or view your cart.
+  </p>
+
+  <h2 class="mt-4">View Cart</h2>
+  <div class="input-group mb-3" style="max-width: 400px;">
+    <input id="userId" type="number" class="form-control" placeholder="Enter user ID">
+    <button class="btn btn-primary" type="button" onclick="viewCart()">View Cart</button>
+  </div>
+
+  <script>
+    function viewCart() {
+      if (id) {
+        window.location.href = `/cart/0`;
+      } else {
+        alert('Please enter a valid user ID.');
+      }
+    }
+  </script>
+{% endif %}
+
+<br><br>
+
+{% if current_user.is_authenticated %}
+<h2>Your Inventory (Seller):</h2>
+{% if inventory %}
 <table class='table table-hover table-bordered container'>
   <thead class="thead-dark">
     <tr>
-      <th scope="col">Purchase ID</th>
+      <th scope="col">Listing ID</th>
       <th scope="col">Product Name</th>
-      <th scope="col">Price</th>
+      <th scope="col">Base Price</th>
+      <th scope="col">Seller Price</th>
+      <th scope="col">Quantity</th>
+      <th scope="col">Active</th>
+      <th scope="col">Image</th>
     </tr>
   </thead>
   <tbody>
-    {% for purchase in purchase_history%}
+    {% for item in inventory %}
       <tr>
-        <th scope="row">{{purchase.id}}</th>
-        <td>{{purchase.pid}}</td>
-        <td>{{purchase.time_purchased}}</td>
+        <th scope="row">{{ item.listing_id }}</th>
+        <td>{{ item.product_name }}</td>
+        <td>${{ '%.2f'|format(item.base_price) }}</td>
+        <td>${{ '%.2f'|format(item.seller_price) }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ 'Yes' if item.is_active else 'No' }}</td>
+        <td>
+          {% if item.image_link %}
+            <a href="{{ item.image_link }}" target="_blank">
+              <img src="{{ item.image_link }}" alt="{{ item.product_name }}" style="width:100px; height:auto; border-radius:8px;">
+            </a>
+          {% else %}
+            <img src="https://via.placeholder.com/100?text=No+Image" alt="No image">
+          {% endif %}
+        </td>
       </tr>
     {% endfor %}
   </tbody>
 </table>
 {% else %}
-<p><a href="{{ url_for('users.login') }}">Log in</a> to see your purchase history!</p>
+<p>You currently have no inventory listed.</p>
+{% endif %}
 {% endif %}
 
 <script src="{{ url_for('static', filename='js/products.js') }}"></script>
+
+
+<br><br>
+
+{% if current_user.is_authenticated %}
+<h2>Search Seller Inventory</h2>
+<form id="seller-search-form" onsubmit="redirectToSellerInventory(event)">
+  <div class="form-group">
+    <label for="seller-id">Seller ID:</label>
+    <input type="number" class="form-control" id="seller-id" placeholder="Enter Seller ID" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+<script>
+function redirectToSellerInventory(event) {
+    event.preventDefault();
+    const sellerId = document.getElementById('seller-id').value;
+    if(sellerId) {
+        window.location.href = `/sellers/${sellerId}/inventory`;
+    }
+}
+</script>
+{% endif %}
+
 
 {% endblock %}

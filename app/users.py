@@ -72,3 +72,17 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for('index.index'))
+
+
+from flask_login import login_required
+from .models.purchase import Purchase
+
+@bp.route('/purchases')
+@login_required
+def purchases():
+    """Show current user's purchase history."""
+    purchases = Purchase.get_all_detailed_by_uid(current_user.id)
+    return render_template('user_purchases.html',
+                           title='My Purchases',
+                           purchases=purchases,
+                           user=current_user)
