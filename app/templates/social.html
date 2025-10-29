@@ -1,38 +1,57 @@
 {% extends "base.html" %}
 
 {% block content %}
-<br><br>
-
 <h2>Recent Feedback</h2>
 
-{% if need_login %}
-  <p><a href="{{ url_for('users.login') }}">Log in</a> to see your recent product/seller reviews.</p>
+<!-- Filter + limit form -->
+<form method="get" class="form-inline mb-3">
+  <label class="mr-2">Show:</label>
+  <select name="type" class="form-control form-control-sm mr-2">
+    {% set cur = request.args.get('type', 'all') %}
+    <option value="all" {{ 'selected' if cur == 'all' else '' }}>All</option>
+    <option value="product" {{ 'selected' if cur == 'product' else '' }}>Products</option>
+    <option value="seller" {{ 'selected' if cur == 'seller' else '' }}>Sellers</option>
+  </select>
+
+  <label class="mr-2">Limit:</label>
+  <input name="limit" type="number" min="1" max="50"
+         value="{{ request.args.get('limit', 5) }}"
+         class="form-control form-control-sm mr-2"/>
+
+  <button class="btn btn-dark btn-sm">Apply</button>
+</form>
+
+{% if rows|length == 0 %}
+  <p>No recent reviews yet.</p>
 {% else %}
-  {% if items|length == 0 %}
-    <p>No recent reviews yet.</p>
-  {% else %}
-    <table class="table table-hover table-bordered container">
-      <thead class="thead-dark">
+  <table class="table table-hover table-bordered container">
+    <thead class="thead-dark">
+      <tr>
+        <th>Category</th>
+        <th>Item/Seller</th>
+        <th>Rating</th>
+        <th>Comment</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
         <tr>
-          <th scope="col">Type</th>
-          <th scope="col">Target ID</th>
-          <th scope="col">Rating</th>
-          <th scope="col">Comment</th>
-          <th scope="col">When</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in items %}
-        <tr>
-          <th scope="row">{{ r.type }}</th>
-          <td>{{ r.target_id }}</td>
-          <td>{{ r.rating }}</td>
+          <td>{{ r.type }}</td>
+          <td>{{ r.target_name or r.target_id }}</td>
+          <td>
+            {% set stars = (r.rating|string)|int %}
+            <span>
+              {% for _ in range(stars) %}&#9733;{% endfor %}
+              {% for _ in range(5 - stars) %}&#9734;{% endfor %}
+            </span>
+            <small>({{ r.rating }})</small>
+          </td>
           <td>{{ r.body }}</td>
           <td>{{ r.created_at }}</td>
         </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
 {% endif %}
 {% endblock %}
