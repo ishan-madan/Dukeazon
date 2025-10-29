@@ -24,5 +24,6 @@ FROM (
     JOIN users u ON u.id = sr.seller_id
     WHERE sr.user_id = :user_id
 ) AS all_feedback
+WHERE (:type = 'all' OR type = :type) 
 ORDER BY created_at DESC
 LIMIT :limit;
