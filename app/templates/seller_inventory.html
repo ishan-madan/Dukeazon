@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mt-4 mb-3">Seller Inventory</h2>
+
+{% if inventory %}
+  <table class="table table-striped mt-3">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Image</th>
+        <th>Base Price</th>
+        <th>Seller Price</th>
+        <th>Quantity</th>
+        <th>Active</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in inventory %}
+      <tr>
+        <td>{{ item.product_name }}</td>
+        <td>
+          {% if item.image_link %}
+            <a href="{{ item.image_link }}" target="_blank">
+              <img src="{{ item.image_link }}" alt="{{ item.product_name }}"
+                   style="width:100px; height:auto; border-radius:8px;">
+            </a>
+          {% else %}
+            <img src="https://via.placeholder.com/100?text=No+Image" alt="No image">
+          {% endif %}
+        </td>
+        <td>${{ '%.2f'|format(item.base_price) }}</td>
+        <td>${{ '%.2f'|format(item.seller_price) }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ 'Yes' if item.is_active else 'No' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>This seller has no inventory.</p>
+{% endif %}
+
+<a href="{{ url_for('index.index') }}" class="btn btn-primary mt-3">Back Home</a>
+{% endblock %}
