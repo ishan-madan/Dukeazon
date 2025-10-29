@@ -47,7 +47,6 @@
 </table>
 {% else %}
 <p><a href="{{ url_for('users.login') }}">Log in</a> to see your purchase history!</p>
-{% endif %}
 
 <h2>View Cart</h2>
 <input id="userId" type="number" placeholder="Enter user ID">
@@ -78,5 +77,8 @@ async function getCart() {
   });
 }
 </script>
+{% endif %}
+
+
 
 {% endblock %}
