@@ -27,3 +27,18 @@ WHERE available = :available
 ''',
                               available=available)
         return [Product(*row) for row in rows]
+
+    @staticmethod
+    def get_top_expensive(k):
+        if k is None or k <= 0:
+            raise ValueError("Parameter 'k' must be a positive integer.")
+
+        rows = app.db.execute('''
+SELECT id, name, price, available
+FROM Products
+WHERE available = TRUE
+ORDER BY price DESC, id ASC
+LIMIT :k
+''', k=k)
+
+        return [Product(*row) for row in rows]

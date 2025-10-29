@@ -24,6 +24,25 @@
   </tbody>
 </table>
 
+<div class="container mt-4">
+  <h3>Find the top-k most expensive products</h3>
+  <form id="top-k-form" class="form-inline">
+    <div class="form-group mb-2">
+      <label class="sr-only" for="top-k-input">Top k</label>
+      <input type="number"
+             class="form-control"
+             id="top-k-input"
+             name="k"
+             placeholder="Enter k"
+             min="1"
+             required>
+    </div>
+    <button type="submit" class="btn btn-primary mb-2 ml-2">Search</button>
+  </form>
+  <div id="top-k-alert" class="text-danger mb-2"></div>
+  <div id="top-k-results"></div>
+</div>
+
 <br><br>
 
 {% if current_user.is_authenticated %}
@@ -98,6 +117,8 @@
 <p>You currently have no inventory listed.</p>
 {% endif %}
 {% endif %}
+
+<script src="{{ url_for('static', filename='js/products.js') }}"></script>
 
 
 <br><br>
