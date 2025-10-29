@@ -24,6 +24,16 @@ CREATE TABLE Purchases (
     time_purchased timestamp without time zone NOT NULL DEFAULT (current_timestamp AT TIME ZONE 'UTC')
 );
 
+
+CREATE TABLE Cart (
+  user_id INTEGER NOT NULL,
+  product_id INTEGER NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (user_id, product_id),
+  FOREIGN KEY (user_id) REFERENCES Users(id),
+  FOREIGN KEY (product_id) REFERENCES Products(id)
+);
+
 -- Social / Feedback tables --
 CREATE TABLE IF NOT EXISTS product_reviews (
   product_review_id SERIAL PRIMARY KEY,
@@ -52,3 +62,4 @@ CREATE TABLE ProductSeller (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     UNIQUE (seller_id, product_id)
 );
+

@@ -77,6 +77,28 @@ def gen_purchases(num_purchases, available_pids):
         print(f'{num_purchases} generated')
     return
 
+def gen_cart(num_entries, available_pids, num_users):
+    with open('Cart.csv', 'w') as f:
+        writer = get_csv_writer(f)
+        print('Cart...', end=' ', flush=True)
+        for cid in range(num_entries):
+            if cid % 100 == 0:
+                print(f'{cid}', end=' ', flush=True)
+            uid = fake.random_int(min=0, max=num_users - 1)
+            pid = fake.random_element(elements=available_pids)
+            quantity = fake.random_int(min=1, max=5)
+            date_added = fake.date_time_this_year()
+            writer.writerow([cid, uid, pid, quantity, date_added])
+        print(f'{num_entries} generated')
+    return
+
+
+#gen_users(num_users)
+#available_pids = gen_products(num_products)
+#gen_purchases(num_purchases, available_pids)
+
+available_pids = list(range(num_products))  # make a simple list of product IDs
+gen_cart(num_entries=1200, available_pids=available_pids, num_users=num_users)
 
 def gen_product_sellers(num_sellers, available_pids, max_listings_per_seller):
     with open('ProductSeller.csv', 'w', newline='') as f:
@@ -97,3 +119,4 @@ gen_users(num_users)
 available_pids = gen_products(num_products)
 gen_purchases(num_purchases, available_pids)
 gen_product_sellers(num_sellers=100, available_pids=available_pids, max_listings_per_seller=30)
+
