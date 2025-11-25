@@ -4,9 +4,10 @@ from urllib.parse import quote_plus
 
 class Config(object):
     SECRET_KEY = os.environ.get('SECRET_KEY')
+    # Allow missing DB_PASSWORD in dev environments by defaulting to empty string
     SQLALCHEMY_DATABASE_URI = 'postgresql://{}:{}@{}:{}/{}'\
         .format(os.environ.get('DB_USER'),
-                quote_plus(os.environ.get('DB_PASSWORD')),
+                quote_plus(os.environ.get('DB_PASSWORD') or ''),
                 os.environ.get('DB_HOST'),
                 os.environ.get('DB_PORT'),
                 os.environ.get('DB_NAME'))
