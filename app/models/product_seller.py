@@ -1,4 +1,5 @@
 from flask import current_app as app
+from datetime import datetime, timedelta
 
 
 class ProductSeller:
@@ -159,3 +160,90 @@ WHERE product_id = :product_id AND is_active = TRUE AND quantity > 0
 LIMIT 1
 ''', product_id=product_id)
         return len(rows) > 0
+
+    @staticmethod
+    def analytics_for_seller(seller_id, days=30, limit=5):
+        """
+        Return analytics for a seller:
+        - top_products: list of {product_id, product_name, units_sold, revenue}
+        - timeseries: list of {date, units} for the last `days` days (inclusive)
+        - totals: totals for the last `days` and all-time
+        """
+        # compute cutoff timestamp for recent window
+        cutoff = datetime.utcnow() - timedelta(days=days)
+
+        # Top products in the window
+        top_rows = app.db.execute('''
+SELECT oi.product_id,
+       p.name,
+       COALESCE(SUM(oi.quantity),0) AS units_sold,
+       COALESCE(SUM(oi.subtotal),0) AS revenue
+FROM OrderItems oi
+JOIN Orders o ON oi.order_id = o.id
+JOIN Products p ON oi.product_id = p.id
+WHERE oi.seller_id = :seller_id
+  AND o.created_at >= :cutoff
+  AND oi.fulfilled = TRUE
+GROUP BY oi.product_id, p.name
+ORDER BY units_sold DESC
+LIMIT :limit
+''', seller_id=seller_id, cutoff=cutoff, limit=limit)
+
+        top_products = []
+        for r in top_rows:
+            top_products.append({
+                "product_id": r[0],
+                "product_name": r[1],
+                "units_sold": int(r[2]) if r[2] is not None else 0,
+                "revenue": float(r[3]) if r[3] is not None else 0.0
+            })
+
+        # Timeseries: daily units sold in the window
+        ts_rows = app.db.execute('''
+SELECT DATE(o.created_at) AS day,
+       COALESCE(SUM(oi.quantity),0) AS units
+FROM OrderItems oi
+JOIN Orders o ON oi.order_id = o.id
+WHERE oi.seller_id = :seller_id
+  AND o.created_at >= :cutoff
+  AND oi.fulfilled = TRUE
+GROUP BY DATE(o.created_at)
+ORDER BY day
+''', seller_id=seller_id, cutoff=cutoff)
+
+        # Build a date-indexed map then fill missing days with 0
+        ts_map = {row[0].isoformat(): int(row[1]) for row in ts_rows}
+        timeseries = []
+        for i in range(days, -1, -1):
+            d = (datetime.utcnow() - timedelta(days=i)).date()
+            key = d.isoformat()
+            timeseries.append({"date": key, "units": ts_map.get(key, 0)})
+
+        # Totals: recent window
+        totals_row = app.db.execute('''
+SELECT COALESCE(SUM(oi.quantity),0) AS units,
+       COALESCE(SUM(oi.subtotal),0) AS revenue
+FROM OrderItems oi
+JOIN Orders o ON oi.order_id = o.id
+WHERE oi.seller_id = :seller_id
+  AND o.created_at >= :cutoff
+  AND oi.fulfilled = TRUE
+''', seller_id=seller_id, cutoff=cutoff)
+        totals_recent = totals_row[0] if totals_row else (0, 0.0)
+
+        # Totals: all-time
+        all_row = app.db.execute('''
+SELECT COALESCE(SUM(quantity),0) AS units,
+       COALESCE(SUM(subtotal),0) AS revenue
+FROM OrderItems
+WHERE seller_id = :seller_id
+  AND fulfilled = TRUE
+''', seller_id=seller_id)
+        totals_all = all_row[0] if all_row else (0, 0.0)
+
+        return {
+            "top_products": top_products,
+            "timeseries": timeseries,
+            "totals_recent": {"units": int(totals_recent[0] or 0), "revenue": float(totals_recent[1] or 0.0)},
+            "totals_all": {"units": int(totals_all[0] or 0), "revenue": float(totals_all[1] or 0.0)}
+        }
