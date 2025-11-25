@@ -162,7 +162,7 @@ def seller_orders_view(seller_id):
     q = request.args.get('q')
     items = Order.list_items_for_seller(seller_id, q=q)
 
-    # Group items by order_id while preserving order (SQL already sorted by created_at DESC)
+                                                                                            
     orders = []
     order_map = {}
     for it in items:

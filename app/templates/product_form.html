@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>{{ 'Create Product' if mode == 'create' else 'Edit Product' }}</h2>
+  <p class="text-muted">Fill out the fields below. Category is chosen from the existing list.</p>
+
+  <form method="post" action="{{ url_for('products.new') if mode == 'create' else url_for('products.edit', product_id=product.id) }}" novalidate>
+    <div class="form-group">
+      <label for="name">Product Name</label>
+      <input type="text" class="form-control" id="name" name="name" required
+             value="{{ product.name if product else '' }}">
+    </div>
+
+    <div class="form-group">
+      <label for="category">Category</label>
+      <select class="form-control" id="category" name="category_id" required>
+        {% for category in categories %}
+          <option value="{{ category.id }}"
+                  {% if product and product.category_id == category.id %}selected{% endif %}>
+            {{ category.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="price">Price</label>
+      <input type="number" class="form-control" id="price" name="price" step="0.01" min="0.01" required
+             value="{{ '%.2f'|format(product.price) if product else '' }}">
+    </div>
+
+    <div class="form-group">
+      <label for="image_link">Image URL</label>
+      <input type="url" class="form-control" id="image_link" name="image_link"
+             value="{{ product.image_link if product else '' }}">
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea class="form-control" id="description" name="description" rows="4" required>{{ product.description if product else '' }}</textarea>
+    </div>
+
+    <div class="form-group form-check">
+      <input type="checkbox" class="form-check-input" id="available" name="available"
+             {% if product is none or product.available %}checked{% endif %}>
+      <label class="form-check-label" for="available">Available</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">{{ 'Create' if mode == 'create' else 'Save Changes' }}</button>
+  </form>
+</div>
+{% endblock %}

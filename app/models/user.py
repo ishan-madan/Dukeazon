@@ -22,10 +22,10 @@ FROM Users
 WHERE email = :email
 """,
                               email=email)
-        if not rows:  # email not found
+        if not rows:                   
             return None
         elif not check_password_hash(rows[0][0], password):
-            # incorrect password
+                                
             return None
         else:
             return User(*(rows[0][1:]))
@@ -55,8 +55,8 @@ RETURNING id
             id = rows[0][0]
             return User.get(id)
         except Exception as e:
-            # likely email already in use; better error checking and reporting needed;
-            # the following simply prints the error to the console:
+                                                                                      
+                                                                   
             print(str(e))
             return None
 

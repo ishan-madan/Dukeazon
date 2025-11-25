@@ -1,29 +1,105 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, render_template, request, abort, redirect, url_for, flash
+from flask_login import login_required, current_user
 
+from .models.category import Category
 from .models.product import Product
+from .models.product_review import ProductReview
+from .models.product_seller import ProductSeller
 
 bp = Blueprint('products', __name__, url_prefix='/products')
 
 
-@bp.route('/top', methods=['GET'])
-def top_products():
-    """Return the top-k most expensive available products as JSON."""
-    k = request.args.get('k', type=int)
-    if k is None:
-        return jsonify({"error": "Query parameter 'k' is required and must be an integer."}), 400
-    if k <= 0:
-        return jsonify({"error": "Query parameter 'k' must be positive."}), 400
+@bp.route('/', methods=['GET'])
+def browse():
+    category_id = request.args.get('category', type=int)
+    query = request.args.get('q', type=str)
+    sort = request.args.get('sort', default='price_asc', type=str)
 
-    try:
-        top_products = Product.get_top_expensive(k)
-    except ValueError as exc:
-        return jsonify({"error": str(exc)}), 400
+    products = Product.search(category_id=category_id, search=query, sort=sort, available=True)
+    categories = Category.get_all()
 
-    payload = [{
-        "id": product.id,
-        "name": product.name,
-        "price": float(product.price),
-        "available": product.available
-    } for product in top_products]
+    return render_template('products.html',
+                           products=products,
+                           categories=categories,
+                           selected_category=category_id,
+                           query=query or '',
+                           sort=sort)
 
-    return jsonify({"products": payload})
+
+@bp.route('/<int:product_id>', methods=['GET'])
+def detail(product_id):
+    product = Product.get(product_id)
+    if not product:
+        abort(404)
+    sellers = ProductSeller.get_active_by_product(product_id)
+    reviews = ProductReview.get_for_product(product_id)
+    return render_template('product_detail.html',
+                           product=product,
+                           sellers=sellers,
+                           reviews=reviews)
+
+
+@bp.route('/new', methods=['GET', 'POST'])
+@login_required
+def new():
+    categories = Category.get_all()
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        price = request.form.get('price', type=float)
+        image_link = request.form.get('image_link', '').strip() or None
+        category_id = request.form.get('category_id', type=int)
+        available = bool(request.form.get('available'))
+
+        category = Category.get(category_id) if category_id else None
+        if not category or not name or price is None:
+            flash('Please fill out name, price, and category.', 'danger')
+            return render_template('product_form.html',
+                                   mode='create',
+                                   categories=categories,
+                                   product=None)
+        pid = Product.create(category.id, category.name, name, description, price, available, image_link, current_user.id)
+        flash('Product created.', 'success')
+        return redirect(url_for('products.detail', product_id=pid))
+
+    return render_template('product_form.html',
+                           mode='create',
+                           categories=categories,
+                           product=None)
+
+
+@bp.route('/<int:product_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit(product_id):
+    product = Product.get(product_id)
+    if not product:
+        abort(404)
+    if product.creator_id != current_user.id:
+        abort(403)
+
+    categories = Category.get_all()
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        price = request.form.get('price', type=float)
+        image_link = request.form.get('image_link', '').strip() or None
+        category_id = request.form.get('category_id', type=int)
+        available = bool(request.form.get('available'))
+
+        category = Category.get(category_id) if category_id else None
+        if not category or not name or price is None:
+            flash('Please fill out name, price, and category.', 'danger')
+            return render_template('product_form.html',
+                                   mode='edit',
+                                   categories=categories,
+                                   product=product)
+
+        Product.update(product_id, category.id, category.name, name, description, price, available, image_link)
+        flash('Product updated.', 'success')
+        return redirect(url_for('products.detail', product_id=product_id))
+
+    return render_template('product_form.html',
+                           mode='edit',
+                           categories=categories,
+                           product=product)

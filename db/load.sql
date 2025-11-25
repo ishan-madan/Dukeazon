@@ -5,7 +5,12 @@ SELECT pg_catalog.setval('public.users_id_seq',
                          COALESCE((SELECT MAX(id)+1 FROM Users), 1),
                          false);
 
-\COPY Products (id, name, price, available, image_link) FROM 'Products.csv' WITH DELIMITER ',' NULL '' CSV
+\COPY Categories (id, name) FROM 'Categories.csv' WITH DELIMITER ',' NULL '' CSV
+SELECT pg_catalog.setval('public.categories_id_seq',
+                         COALESCE((SELECT MAX(id)+1 FROM Categories), 1),
+                         false);
+
+\COPY Products (id, category_id, category_name, name, description, price, available, image_link) FROM 'Products.csv' WITH DELIMITER ',' NULL '' CSV
 SELECT pg_catalog.setval('public.products_id_seq',
                          COALESCE((SELECT MAX(id)+1 FROM Products), 1),
                          false);
