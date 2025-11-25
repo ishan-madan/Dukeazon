@@ -47,7 +47,13 @@ def seller_inventory(seller_id):
     inventory = sorted(inventory, key=lambda itm: itm.get('product_id', 0))
     add_form = AddProductForm()
 
-    return render_template('seller_inventory.html', inventory=inventory, add_form=add_form)
+    # Analytics for seller: show top products and recent trends (last 30 days)
+    try:
+        analytics = ProductSeller.analytics_for_seller(seller_id, days=30, limit=6)
+    except Exception:
+        analytics = None
+
+    return render_template('seller_inventory.html', inventory=inventory, add_form=add_form, analytics=analytics)
 
 
 @bp.route('/<int:seller_id>/inventory/add', methods=['POST'])
