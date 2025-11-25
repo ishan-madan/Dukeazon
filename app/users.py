@@ -1,5 +1,5 @@
 from flask import render_template, redirect, url_for, flash, request
-from werkzeug.urls import url_parse
+from urllib.parse import urlparse as url_parse
 from flask_login import login_user, logout_user, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
@@ -42,9 +42,10 @@ class RegistrationForm(FlaskForm):
     firstname = StringField('First Name', validators=[DataRequired()])
     lastname = StringField('Last Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
+    address = StringField('Address', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
-        'Repeat Password', validators=[DataRequired(),
+        'Confirm Password', validators=[DataRequired(),
                                        EqualTo('password')])
     submit = SubmitField('Register')
 
@@ -62,7 +63,8 @@ def register():
         if User.register(form.email.data,
                          form.password.data,
                          form.firstname.data,
-                         form.lastname.data):
+                         form.lastname.data,
+                         form.address.data):
             flash('Congratulations, you are now a registered user!')
             return redirect(url_for('users.login'))
     return render_template('register.html', title='Register', form=form)
@@ -95,7 +97,7 @@ class UpdateAccountForm(FlaskForm):
     submit = SubmitField('Update')
 
     def validate_email(self, email):
-        # prevent duplicate emails
+                                  
         if email.data != current_user.email and User.email_exists(email.data):
             raise ValidationError('A user with this email already exists.')
 
@@ -110,14 +112,14 @@ def account():
     update_form = UpdateAccountForm()
     balance_form = BalanceForm()
 
-    # Pre-fill the user's current info on GET
+                                             
     if request.method == 'GET':
         update_form.firstname.data = current_user.firstname
         update_form.lastname.data = current_user.lastname
         update_form.email.data = current_user.email
         update_form.address.data = current_user.address
 
-    # Handle updating profile information
+                                         
     if update_form.submit.data and update_form.validate_on_submit():
         User.update_account(
             uid=current_user.id,
@@ -129,16 +131,16 @@ def account():
         flash('Your account information has been updated.')
         return redirect(url_for('users.account'))
 
-    # Handle balance updates
+                            
     if balance_form.validate_on_submit():
         amount = float(balance_form.amount.data)
 
-        # Add funds
+                   
         if balance_form.submit_add.data:
             User.add_balance(current_user.id, amount)
             flash(f'Added ${amount:.2f} to your balance.')
 
-        # Withdraw funds
+                        
         if balance_form.submit_withdraw.data:
             if amount > current_user.balance:
                 flash('Not enough balance to withdraw.')

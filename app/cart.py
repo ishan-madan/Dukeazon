@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 
 from .models.cart import Cart
 from .models.order import Order
+from types import SimpleNamespace
 
 bp = Blueprint('cart', __name__, url_prefix='/cart')
 
@@ -158,11 +159,35 @@ def order_detail(user_id, order_id):
 @login_required
 def seller_orders_view(seller_id):
     _ensure_owner(seller_id)
-    items = Order.list_items_for_seller(seller_id)
+    q = request.args.get('q')
+    items = Order.list_items_for_seller(seller_id, q=q)
+
+                                                                                            
+    orders = []
+    order_map = {}
+    for it in items:
+        oid = it['order_id']
+        if oid not in order_map:
+            order_obj = SimpleNamespace(
+                order_id=oid,
+                order_created_at=it['order_created_at'],
+                buyer_id=it['buyer_id'],
+                buyer_name=it['buyer_name'],
+                buyer_address=it.get('buyer_address'),
+                order_total=it.get('order_total'),
+                order_total_items=it.get('order_total_items'),
+                order_status=it.get('order_status'),
+                items=[]
+            )
+            orders.append(order_obj)
+            order_map[oid] = order_obj
+        order_map[oid].items.append(it)
+
     return render_template('seller_orders.html',
                            title='Orders to Fulfill',
                            seller_id=seller_id,
-                           items=items)
+                           orders=orders,
+                           q=q)
 
 
 @bp.route('/seller/<int:seller_id>/fulfillment/<int:item_id>', methods=['POST'])
@@ -172,7 +197,7 @@ def fulfill_item(seller_id, item_id):
     try:
         Order.mark_item_fulfilled(seller_id, item_id)
     except ValueError as exc:
-        flash(str(exc))
+        flash(str(exc), 'danger')
     else:
-        flash("Marked item as fulfilled.")
+        flash("Marked item as fulfilled.", 'success')
     return redirect(url_for('cart.seller_orders_view', seller_id=seller_id))

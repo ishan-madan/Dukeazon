@@ -22,10 +22,10 @@ FROM Users
 WHERE email = :email
 """,
                               email=email)
-        if not rows:  # email not found
+        if not rows:                   
             return None
         elif not check_password_hash(rows[0][0], password):
-            # incorrect password
+                                
             return None
         else:
             return User(*(rows[0][1:]))
@@ -41,21 +41,22 @@ WHERE email = :email
         return len(rows) > 0
 
     @staticmethod
-    def register(email, password, firstname, lastname):
+    def register(email, password, firstname, lastname, address):
         try:
             rows = app.db.execute("""
-INSERT INTO Users(email, password, firstname, lastname)
-VALUES(:email, :password, :firstname, :lastname)
+INSERT INTO Users(email, password, firstname, lastname, address)
+VALUES(:email, :password, :firstname, :lastname, :address)
 RETURNING id
 """,
                                   email=email,
                                   password=generate_password_hash(password),
-                                  firstname=firstname, lastname=lastname)
+                                  firstname=firstname, lastname=lastname,
+                                  address=address)
             id = rows[0][0]
             return User.get(id)
         except Exception as e:
-            # likely email already in use; better error checking and reporting needed;
-            # the following simply prints the error to the console:
+                                                                                      
+                                                                   
             print(str(e))
             return None
 

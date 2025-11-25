@@ -100,8 +100,13 @@ ORDER BY oi.id
         }
 
     @staticmethod
-    def list_items_for_seller(seller_id):
-        rows = app.db.execute("""
+    def list_items_for_seller(seller_id, q=None):
+        """
+        Return all order items that belong to a given seller. If q is provided,
+        filter by order id or buyer name (case-insensitive partial match).
+        Results are ordered by order created_at DESC then item id.
+        """
+        sql = """
 SELECT oi.id,
        oi.order_id,
        oi.product_id,
@@ -113,15 +118,24 @@ SELECT oi.id,
        oi.fulfilled_at,
        o.user_id,
        bu.firstname || ' ' || bu.lastname AS buyer_name,
+       bu.address AS buyer_address,
        o.created_at,
-       o.status
+       o.status,
+       o.total_amount,
+       (SELECT COALESCE(SUM(quantity),0) FROM OrderItems WHERE order_id = o.id) AS total_items
 FROM OrderItems oi
 JOIN Orders o ON oi.order_id = o.id
 JOIN Products p ON oi.product_id = p.id
 JOIN Users bu ON o.user_id = bu.id
 WHERE oi.seller_id = :seller_id
-ORDER BY o.created_at DESC, oi.id
-""", seller_id=seller_id)
+"""
+        params = {"seller_id": seller_id}
+        if q:
+            sql += " AND (CAST(o.id AS TEXT) ILIKE :q_like OR (bu.firstname || ' ' || bu.lastname) ILIKE :q_like)"
+            params["q_like"] = f"%{q}%"
+        sql += " ORDER BY o.created_at DESC, oi.id"
+
+        rows = app.db.execute(sql, **params)
 
         items = []
         for row in rows:
@@ -137,8 +151,11 @@ ORDER BY o.created_at DESC, oi.id
                 "fulfilled_at": row[8],
                 "buyer_id": row[9],
                 "buyer_name": row[10],
-                "order_created_at": row[11],
-                "order_status": row[12]
+                "buyer_address": row[11],
+                "order_created_at": row[12],
+                "order_status": row[13],
+                "order_total": row[14],
+                "order_total_items": row[15]
             })
         return items
 

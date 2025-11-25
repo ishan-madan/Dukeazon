@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <a href="{{ url_for('products.browse') }}">&larr; Back to products</a>
+  <div class="row mt-3">
+    <div class="col-md-5 mb-3">
+      <img src="{{ product.image_link or 'https://via.placeholder.com/500?text=No+Image' }}"
+           alt="{{ product.name }}"
+           class="img-fluid rounded"
+           style="object-fit: cover; width: 100%; height: 320px;">
+    </div>
+    <div class="col-md-7">
+      <h2>{{ product.name }}</h2>
+      <span class="badge badge-info">{{ product.category_name }}</span>
+      <p class="h4 mt-3 text-primary">${{ '%.2f'|format(product.price) }}</p>
+      <p class="lead">{{ product.description }}</p>
+      {% if current_user.is_authenticated and product.creator_id == current_user.id %}
+      <a class="btn btn-outline-primary mt-2" href="{{ url_for('products.edit', product_id=product.id) }}">Edit Product</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <hr>
+  <h4>Available from sellers</h4>
+  {% if sellers %}
+    <table class="table table-striped mt-2">
+      <thead class="thead-light">
+        <tr>
+          <th>Seller</th>
+          <th>Price</th>
+          <th>Quantity</th>
+          <th>Add to Cart</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for seller in sellers %}
+          <tr>
+            <td>{{ seller.seller_name if seller.seller_name else ('Seller #' ~ seller.seller_id) }}</td>
+            <td>${{ '%.2f'|format(seller.price) }}</td>
+            <td>{{ seller.quantity }}</td>
+            <td>
+              {% if current_user.is_authenticated %}
+                <form method="post"
+                      action="{{ url_for('cart.add_item', user_id=current_user.id) }}"
+                      class="form-inline">
+                  <input type="hidden" name="listing_id" value="{{ seller.listing_id }}">
+                  <label class="sr-only" for="qty-{{ seller.listing_id }}">Quantity</label>
+                  <input id="qty-{{ seller.listing_id }}"
+                         name="quantity"
+                         type="number"
+                         min="1"
+                         max="{{ seller.quantity }}"
+                         value="1"
+                         class="form-control form-control-sm mr-2"
+                         style="width:90px;">
+                  <button type="submit" class="btn btn-sm btn-primary">Add</button>
+                </form>
+              {% else %}
+                <span class="text-muted">Log in to add.</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="text-muted">No active sellers currently offering this product.</p>
+  {% endif %}
+
+  <hr>
+  <h4>Reviews</h4>
+  {% if reviews %}
+    <div class="list-group">
+      {% for review in reviews %}
+        <div class="list-group-item">
+          <div class="d-flex justify-content-between">
+            <div>
+              <strong>{{ review.firstname }} {{ review.lastname }}</strong>
+              <span class="ml-2">⭐ {{ review.rating }}</span>
+            </div>
+            <small class="text-muted">{{ review.created_at }}</small>
+          </div>
+          <p class="mb-1">{{ review.body }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">No reviews yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
