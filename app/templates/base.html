@@ -104,8 +104,9 @@
     <div class="collapse navbar-collapse" id="mainNav">
       <ul class="navbar-nav ml-auto align-items-lg-center">
         {% if current_user.is_authenticated %}
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.cart', user_id=current_user.id) }}">Cart</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.orders', user_id=current_user.id) }}">Orders</a></li>
+  <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.cart', user_id=current_user.id) }}">Cart</a></li>
+  <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.orders', user_id=current_user.id) }}">Orders</a></li>
+  <li class="nav-item"><a class="nav-link" href="{{ url_for('product_seller.seller_inventory', seller_id=current_user.id) }}">Inventory</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.seller_orders_view', seller_id=current_user.id) }}">Fulfillment</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('social.social_page') }}">Reviews</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('users.purchases') }}">Purchases</a></li>
