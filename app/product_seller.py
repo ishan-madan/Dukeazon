@@ -43,6 +43,8 @@ def seller_inventory(seller_id):
     
     # Fetch all listings for this seller
     inventory = ProductSeller.get_all_detailed_by_seller(seller_id)
+    # sort inventory by product_id for deterministic ordering
+    inventory = sorted(inventory, key=lambda itm: itm.get('product_id', 0))
     add_form = AddProductForm()
 
     return render_template('seller_inventory.html', inventory=inventory, add_form=add_form)
@@ -64,13 +66,13 @@ def add_product(seller_id):
             # Check if seller already has this product
             existing = ProductSeller.get_all_by_seller(seller_id)
             if any(p.product_id == form.product_id.data for p in existing):
-                flash('This product is already in your inventory. Use Update to change quantity.')
+                flash('This product is already in your inventory. Use Update to change quantity.', 'warning')
             else:
                 ProductSeller.add(seller_id, form.product_id.data, 
                                 form.price.data, form.quantity.data)
                 # Ensure product is marked available when a seller lists it
                 Product.set_available(form.product_id.data, True)
-                flash('Product added to inventory successfully!')
+                flash('Product added to inventory successfully!', 'success')
         except Exception as e:
             flash(f'Error adding product: {str(e)}')
     
@@ -100,7 +102,7 @@ def update_product(seller_id, listing_id):
             # active listings with quantity > 0 remain for this product.
             has_active = ProductSeller.has_active_listings_for_product(listing.product_id)
             Product.set_available(listing.product_id, has_active)
-            flash('Quantity updated successfully!')
+            flash('Quantity updated successfully!', 'success')
         except Exception as e:
             flash(f'Error updating quantity: {str(e)}')
     
@@ -131,12 +133,12 @@ def remove_product(seller_id, listing_id):
                 # if no remaining active listings for this product, mark product unavailable
                 if not ProductSeller.has_active_listings_for_product(listing.product_id):
                     Product.set_available(listing.product_id, False)
-                flash('Product removed from inventory.')
+                flash('Product removed from inventory.', 'success')
             else:
                 ProductSeller.activate(listing_id)
                 # ensure product available when re-listed
                 Product.set_available(listing.product_id, True)
-                flash('Product re-listed successfully.')
+                flash('Product re-listed successfully.', 'success')
         except Exception as e:
             flash(f'Error removing product: {str(e)}')
     
