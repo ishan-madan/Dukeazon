@@ -1,6 +1,7 @@
-from flask import render_template
+from flask import render_template, request
 from flask_login import current_user
 import datetime
+import math
 
 from .models.product import Product
 from .models.purchase import Purchase
@@ -14,6 +15,14 @@ bp = Blueprint('index', __name__)
 def index():
     # get all available products for sale:
     products = Product.get_all(True)
+    per_page = 10
+    page = request.args.get('page', 1, type=int)
+    total_products = len(products)
+    total_pages = max(1, math.ceil(total_products / per_page)) if total_products else 1
+    page = max(1, min(page, total_pages))
+    start = (page - 1) * per_page
+    end = start + per_page
+    paginated_products = products[start:end]
     listings_by_product = ProductSeller.get_active_listings()
     # find the products current user has bought:
     if current_user.is_authenticated:
@@ -23,6 +32,9 @@ def index():
         purchases = None
     # render the page by adding information to the index.html file
     return render_template('index.html',
-                           avail_products=products,
+                           avail_products=paginated_products,
                            purchase_history=purchases,
-                           product_listings=listings_by_product)
+                           product_listings=listings_by_product,
+                           page=page,
+                           total_pages=total_pages,
+                           page_numbers=list(range(1, total_pages + 1)))

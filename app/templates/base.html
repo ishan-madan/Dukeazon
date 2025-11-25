@@ -8,19 +8,95 @@
   <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/example.css') }}">
   <style>
+    :root {
+      --misty-blue: #C3CEDA;
+      --blue-gray: #738FA7;
+      --midnight-blue: #0C4160;
+      --dark-blue: #071330;
+    }
     body {
       font-family: "Lato", sans-serif;
-      background-color: #f5f6fa;
+      background-color: var(--misty-blue);
+      color: var(--dark-blue);
+    }
+    .navbar {
+      background-color: var(--midnight-blue);
+    }
+    .navbar-brand-logo {
+      height: 32px;
+      width: 32px;
+      margin-right: 8px;
+    }
+    .navbar .navbar-brand,
+    .navbar .nav-link {
+      color: #fff;
+    }
+    .navbar .nav-link:hover {
+      color: var(--blue-gray);
+    }
+    .navbar .dropdown-menu .dropdown-item {
+      color: var(--dark-blue);
+    }
+    .navbar .dropdown-menu .dropdown-item:hover {
+      color: #fff;
+      background-color: var(--blue-gray);
     }
     .content-wrapper {
       padding: 2rem;
+    }
+    .card {
+      border: 1px solid var(--blue-gray);
+      background-color: #fff;
+      border-radius: 0.6rem;
+      box-shadow: 0 4px 12px rgba(7, 19, 48, 0.05);
+    }
+    .card-header {
+      background-color: var(--midnight-blue);
+      color: #fff;
+      border-bottom: none;
+      border-top-left-radius: 0.6rem;
+      border-top-right-radius: 0.6rem;
+    }
+    .btn-primary {
+      background-color: var(--midnight-blue);
+      border-color: var(--midnight-blue);
+    }
+    .btn-primary:hover,
+    .btn-primary:focus {
+      background-color: var(--dark-blue);
+      border-color: var(--dark-blue);
+    }
+    .btn-outline-secondary {
+      color: var(--midnight-blue);
+      border-color: var(--midnight-blue);
+    }
+    .btn-outline-secondary:hover,
+    .btn-outline-secondary:focus {
+      background-color: var(--midnight-blue);
+      color: #fff;
+    }
+    a,
+    .nav-tabs .nav-link {
+      color: var(--blue-gray);
+    }
+    a:hover,
+    .nav-tabs .nav-link:hover,
+    .nav-tabs .nav-link.active {
+      color: var(--dark-blue);
+    }
+    .nav-tabs .nav-link.active {
+      border-color: var(--dark-blue);
     }
   </style>
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-    <a class="navbar-brand font-weight-bold" href="{{ url_for('index.index') }}">CompSci 316 Mini Amazon</a>
+  <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+    <a class="navbar-brand font-weight-bold text-white d-flex align-items-center" href="{{ url_for('index.index') }}">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1f/Duke_University_Seal.svg"
+           alt="Duke crest" class="navbar-brand-logo">
+      <span>Dukeazon</span>
+    </a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNav" aria-controls="mainNav"
             aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>

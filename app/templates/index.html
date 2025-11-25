@@ -1,13 +1,28 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set product_title_map = {
+    'vanilla ice cream': 'Vanilla Ice Cream',
+    'chocolate ice cream': 'Chocolate Ice Cream',
+    'strawberry ice cream': 'Strawberry Ice Cream',
+    '6-pack of paycheck pilsners': '6-Pack of Paycheck Pilsners',
+    'seven fabergé easter eggs': 'Seven Fabergé Easter Eggs',
+    'painting - the storm on the sea of galilee': 'Painting: The Storm on the Sea of Galilee'
+  } %}
+{% set seller_label_map = {
+    0: 'Harbor Market Co.',
+    1: 'Midnight Ridge Trading',
+    2: 'Northstar Provisions',
+    3: 'Blue Fox Goods',
+    4: 'Granite Bay Supply'
+  } %}
 
 <ul class="nav nav-tabs" id="homeTabs" role="tablist">
   <li class="nav-item">
     <a class="nav-link active" id="shop-tab" data-toggle="tab" href="#shop" role="tab" aria-controls="shop" aria-selected="true">Shop</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="seller-tab" data-toggle="tab" href="#seller-tools" role="tab" aria-controls="seller-tools" aria-selected="false">Seller tools</a>
+    <a class="nav-link" id="seller-tab" data-toggle="tab" href="#seller-tools" role="tab" aria-controls="seller-tools" aria-selected="false">Seller Tools</a>
   </li>
 </ul>
 
@@ -16,11 +31,11 @@
     <div class="row">
       <div class="col-lg-8">
         <div class="card mb-4">
-          <div class="card-body">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
-              <h2 class="h4 mb-3 mb-md-0">Products for sale</h2>
+          <div class="card-header">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+              <h2 class="h5 mb-3 mb-md-0 text-white">Products for Sale</h2>
               <form id="top-k-form" class="form-inline">
-                <label for="top-k-input" class="mr-2 mb-2 mb-sm-0 font-weight-semibold">Find top k most expensive products</label>
+                <label for="top-k-input" class="mr-2 mb-2 mb-sm-0 text-white">Find Top K Highest Priced Products</label>
                 <input type="number"
                        class="form-control mr-2 mb-2 mb-sm-0"
                        id="top-k-input"
@@ -31,8 +46,27 @@
                 <button type="submit" class="btn btn-primary">Search</button>
               </form>
             </div>
+          </div>
+          <div class="card-body">
             <div id="top-k-alert" class="text-danger mb-3"></div>
             <div id="top-k-results" class="mb-3"></div>
+            {% if total_pages > 1 %}
+            <nav aria-label="Products pagination top" class="mb-3">
+              <ul class="pagination justify-content-center">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=page-1) }}">Previous</a>
+                </li>
+                {% for number in page_numbers %}
+                <li class="page-item {% if number == page %}active{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=number) }}">{{ number }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=page+1) }}">Next</a>
+                </li>
+              </ul>
+            </nav>
+            {% endif %}
             <div class="table-responsive">
               <table class="table table-striped table-hover">
                 <thead class="thead-dark">
@@ -47,16 +81,17 @@
                   {% for product in avail_products%}
                   <tr>
                     <th scope="row">{{product.id}}</th>
-                    <td>{{product.name}}</td>
-                    <td class="text-right">${{ '%.2f'|format(product.price) }}</td>
+                    <td>{{ product_title_map.get(product.name|lower, product.name|title) }}</td>
+                    <td class="text-right">${{ '{:,.2f}'.format(product.price) }}</td>
                     <td>
                       {% set listings = product_listings.get(product.id) %}
                       {% if listings %}
                         {% for listing in listings %}
                         <div class="p-2 border rounded mb-2 d-flex flex-column flex-lg-row align-items-lg-center">
                           <div class="mr-lg-3">
-                            <div class="font-weight-semibold">{{ listing.seller_name }}</div>
-                            <small class="text-muted">Price ${{ '%.2f'|format(listing.price) }} • {{ listing.quantity }} in stock</small>
+                            {% set seller_display = seller_label_map.get(listing.seller_id, listing.seller_name) %}
+                            <div class="font-weight-bold">{{ seller_display }}</div>
+                            <small class="text-muted">Price ${{ '{:,.2f}'.format(listing.price) }} • {{ listing.quantity }} in stock</small>
                           </div>
                           {% if current_user.is_authenticated %}
                           <form method="post"
@@ -88,13 +123,32 @@
                 </tbody>
               </table>
             </div>
+            {% if total_pages > 1 %}
+            <nav aria-label="Products pagination">
+              <ul class="pagination justify-content-center">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=page-1) }}">Previous</a>
+                </li>
+                {% for number in page_numbers %}
+                <li class="page-item {% if number == page %}active{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=number) }}">{{ number }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=page+1) }}">Next</a>
+                </li>
+              </ul>
+            </nav>
+            {% endif %}
           </div>
         </div>
       </div>
       <div class="col-lg-4">
         <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="h6 mb-0 text-white">Your Cart</h3>
+          </div>
           <div class="card-body">
-            <h3 class="h5">Your cart</h3>
             <p class="mb-2 text-muted small">Items and totals are shown on the cart page.</p>
             {% if current_user.is_authenticated %}
             <button class="btn btn-primary btn-block"
@@ -122,8 +176,10 @@
     <div class="row">
       <div class="col-lg-8">
         <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="h6 mb-0 text-white">Your Inventory</h3>
+          </div>
           <div class="card-body">
-            <h3 class="h5">Your inventory</h3>
             {% if current_user.is_authenticated %}
               {% if inventory %}
               <div class="table-responsive mt-3">
@@ -143,9 +199,9 @@
                     {% for item in inventory %}
                     <tr>
                       <th scope="row">{{ item.listing_id }}</th>
-                      <td>{{ item.product_name }}</td>
-                      <td>${{ '%.2f'|format(item.base_price) }}</td>
-                      <td>${{ '%.2f'|format(item.seller_price) }}</td>
+                      <td>{{ product_title_map.get(item.product_name|lower, item.product_name|title) }}</td>
+                      <td>${{ '{:,.2f}'.format(item.base_price) }}</td>
+                      <td>${{ '{:,.2f}'.format(item.seller_price) }}</td>
                       <td>{{ item.quantity }}</td>
                       <td>{{ 'Yes' if item.is_active else 'No' }}</td>
                       <td>
@@ -173,8 +229,10 @@
       </div>
       <div class="col-lg-4">
         <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="h6 mb-0 text-white">Search Seller Inventory</h3>
+          </div>
           <div class="card-body">
-            <h3 class="h5">Search seller inventory</h3>
             {% if current_user.is_authenticated %}
             <form id="seller-search-form" onsubmit="redirectToSellerInventory(event)">
               <div class="form-group">

@@ -28,8 +28,8 @@
             <img src="https://via.placeholder.com/100?text=No+Image" alt="No image">
           {% endif %}
         </td>
-        <td>${{ '%.2f'|format(item.base_price) }}</td>
-        <td>${{ '%.2f'|format(item.seller_price) }}</td>
+        <td>${{ '{:,.2f}'.format(item.base_price) }}</td>
+        <td>${{ '{:,.2f}'.format(item.seller_price) }}</td>
         <td>{{ item.quantity }}</td>
         <td>{{ 'Yes' if item.is_active else 'No' }}</td>
       </tr>

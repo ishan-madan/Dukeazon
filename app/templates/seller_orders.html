@@ -40,7 +40,7 @@
           <td>{{ item.buyer_name }}</td>
           <td>{{ item.product_name }}</td>
           <td>{{ item.quantity }}</td>
-          <td>${{ "%.2f"|format(item.subtotal) }}</td>
+          <td>${{ "{:,.2f}".format(item.subtotal) }}</td>
           <td>
             {% if item.fulfilled %}
               <span class="badge badge-success">Fulfilled</span>
