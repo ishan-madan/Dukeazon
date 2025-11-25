@@ -1,44 +1,119 @@
 {% extends "base.html" %}
-{% block content %}
-<h2 class="mt-4 mb-3">Seller Inventory</h2>
 
+{% block content %}
+
+<h2>Seller Inventory</h2>
+
+<!-- Seller Info -->
+<p>
+  {% if seller %}
+    Seller: {{ seller.firstname }} {{ seller.lastname }} (ID {{ seller.id }})
+  {% else %}
+    Seller ID: {{ seller_id }}
+  {% endif %}
+</p>
+
+<!-- Rating Summary -->
+<p>
+  {% if seller_rating and seller_rating.num_reviews > 0 %}
+    Average rating:
+    {{ "%.2f"|format(seller_rating.avg_rating) }}
+    ({{ seller_rating.num_reviews }} review{{ 's' if seller_rating.num_reviews != 1 else '' }})
+  {% else %}
+    <em>This seller has no reviews yet.</em>
+  {% endif %}
+</p>
+
+<!-- Review Button -->
+{% if current_user.is_authenticated %}
+  <a href="{{ url_for('social.seller_review', seller_id=seller_id) }}"
+     class="btn btn-primary btn-sm">
+     Review / Edit this seller
+  </a>
+{% else %}
+  <p><a href="{{ url_for('users.login') }}">Log in to review this seller</a></p>
+{% endif %}
+
+<hr>
+
+<!-- Inventory Table -->
 {% if inventory %}
-  <table class="table table-striped mt-3">
-    <thead>
+  <h3>Products Sold by This Seller</h3>
+  <table class="table table-hover table-bordered container">
+    <thead class="thead-dark">
       <tr>
-        <th>Product</th>
-        <th>Image</th>
-        <th>Base Price</th>
-        <th>Seller Price</th>
-        <th>Quantity</th>
-        <th>Active</th>
+        <th scope="col">Listing ID</th>
+        <th scope="col">Product Name</th>
+        <th scope="col">Base Price</th>
+        <th scope="col">Seller Price</th>
+        <th scope="col">Quantity</th>
+        <th scope="col">Active</th>
+        <th scope="col">Image</th>
       </tr>
     </thead>
     <tbody>
       {% for item in inventory %}
-      <tr>
-        <td>{{ item.product_name }}</td>
-        <td>
-          {% if item.image_link %}
-            <a href="{{ item.image_link }}" target="_blank">
-              <img src="{{ item.image_link }}" alt="{{ item.product_name }}"
-                   style="width:100px; height:auto; border-radius:8px;">
-            </a>
-          {% else %}
-            <img src="https://via.placeholder.com/100?text=No+Image" alt="No image">
-          {% endif %}
-        </td>
-        <td>${{ '%.2f'|format(item.base_price) }}</td>
-        <td>${{ '%.2f'|format(item.seller_price) }}</td>
-        <td>{{ item.quantity }}</td>
-        <td>{{ 'Yes' if item.is_active else 'No' }}</td>
-      </tr>
+        <tr>
+          <th scope="row">{{ item.listing_id }}</th>
+          <td>{{ item.product_name }}</td>
+          <td>${{ '%.2f'|format(item.base_price) }}</td>
+          <td>${{ '%.2f'|format(item.seller_price) }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>{{ 'Yes' if item.is_active else 'No' }}</td>
+          <td>
+            {% if item.image_link %}
+              <a href="{{ item.image_link }}" target="_blank">
+                <img src="{{ item.image_link }}" alt="{{ item.product_name }}" style="width:100px; height:auto; border-radius:8px;">
+              </a>
+            {% else %}
+              <img src="https://via.placeholder.com/100?text=No+Image" alt="No image">
+            {% endif %}
+          </td>
+        </tr>
       {% endfor %}
     </tbody>
   </table>
 {% else %}
-  <p>This seller has no inventory.</p>
+  <p>This seller currently has no active listings.</p>
 {% endif %}
 
-<a href="{{ url_for('index.index') }}" class="btn btn-primary mt-3">Back Home</a>
+<hr class="mt-4">
+
+<!-- Reviews for this Seller -->
+<h3>Reviews for this Seller</h3>
+
+{% if seller_reviews and seller_reviews|length > 0 %}
+  <table class="table table-hover table-bordered container">
+    <thead class="thead-dark">
+      <tr>
+        <th>Buyer</th>
+        <th>Rating</th>
+        <th>Comment</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in seller_reviews %}
+        <tr>
+          <td>{{ r.firstname }} {{ r.lastname }}</td>
+
+          <td>
+            {% set stars = (r.rating|string)|int %}
+            <span>
+              {% for _ in range(stars) %}&#9733;{% endfor %}
+              {% for _ in range(5 - stars) %}&#9734;{% endfor %}
+            </span>
+            <small>({{ r.rating }})</small>
+          </td>
+
+          <td>{{ r.body }}</td>
+          <td>{{ r.created_at }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p><em>No reviews yet for this seller.</em></p>
+{% endif %}
+
 {% endblock %}

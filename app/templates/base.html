@@ -53,12 +53,16 @@
         {% if current_user.is_authenticated %}
 
           Hello {{current_user.firstname}}! 
-          
-          <a href="{{ url_for('social.social_page') }}" type="button" class="btn btn-light">Reviews</a>
+
+          <a href="{{ url_for('index.index') }}" class="btn btn-light">Home</a>
+          <br>
+          <a href="{{ url_for('social.social_page') }}" class="btn btn-light">Recent Feedback</a>
+          <br>
+          <a href="{{ url_for('social.my_reviews') }}" class="btn btn-light">My Reviews</a>
           <br>
           <a href="{{ url_for('users.purchases') }}" class="btn btn-light">Purchases</a>
           <br>
-          <a href="{{ url_for('users.logout') }}" type="button" class="btn btn-light">Log out</a>
+          <a href="{{ url_for('users.logout') }}" class="btn btn-light">Log out</a>
 
         {% else %}
           <a href="{{ url_for('users.login') }}" type="button" class="btn btn-light">Log in</a>

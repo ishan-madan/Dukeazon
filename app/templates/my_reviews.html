@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>My Reviews</h2>
+
+<h3>Product reviews</h3>
+{% if product_reviews %}
+<table class="table table-hover table-bordered container">
+  <thead class="thead-dark">
+    <tr>
+      <th>Product</th>
+      <th>Rating</th>
+      <th>Comment</th>
+      <th>Date</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in product_reviews %}
+    <tr>
+      <td>{{ r.product_name }}</td>
+      <td>
+        {% for _ in range(r.rating) %}&#9733;{% endfor %}
+        {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
+        <small>({{ r.rating }})</small>
+      </td>
+      <td>{{ r.body }}</td>
+      <td>{{ r.created_at }}</td>
+      <td>
+        <a href="{{ url_for('social.product_review', product_id=r.product_id) }}"
+           class="btn btn-sm btn-outline-primary">
+          Edit
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>You have not written any product reviews yet.</p>
+{% endif %}
+
+<hr>
+
+<h3>Seller reviews</h3>
+{% if seller_reviews %}
+<table class="table table-hover table-bordered container">
+  <thead class="thead-dark">
+    <tr>
+      <th>Seller</th>
+      <th>Rating</th>
+      <th>Comment</th>
+      <th>Date</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in seller_reviews %}
+    <tr>
+      <td>{{ r.firstname }} {{ r.lastname }}</td>
+      <td>
+        {% for _ in range(r.rating) %}&#9733;{% endfor %}
+        {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
+        <small>({{ r.rating }})</small>
+      </td>
+      <td>{{ r.body }}</td>
+      <td>{{ r.created_at }}</td>
+      <td>
+        <a href="{{ url_for('social.seller_review', seller_id=r.seller_id) }}"
+           class="btn btn-sm btn-outline-primary">
+          Edit
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>You have not written any seller reviews yet.</p>
+{% endif %}
+
+{% endblock %}

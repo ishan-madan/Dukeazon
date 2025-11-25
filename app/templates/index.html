@@ -11,14 +11,47 @@
       <th scope="col">Product ID</th>
       <th scope="col">Product Name</th>
       <th scope="col">Price</th>
+      <th scope="col">Rating</th>
+      <th scope="col">Review</th>
     </tr>
   </thead>
   <tbody>
-    {% for product in avail_products%}
+    {% for product in avail_products %}
       <tr>
-        <th scope="row">{{product.id}}</th>
-        <td>{{product.name}}</td>
-        <td>{{product.price}}</td>
+        <th scope="row">{{ product.id }}</th>
+        <td>{{ product.name }}</td>
+        <td>{{ product.price }}</td>
+
+        {# Rating summary cell #}
+        {% set summary = product_ratings.get(product.id) if product_ratings is defined else None %}
+        <td>
+          {% if summary %}
+            {% set num = summary.get('count', 0) %}
+            {% if num > 0 %}
+              {% set avg = summary.get('avg') %}
+              {{ "%.2f"|format(avg) }}
+              ({{ num }} review{{ 's' if num != 1 else '' }})
+            {% else %}
+              <small>No reviews yet</small>
+            {% endif %}
+          {% else %}
+            <small>No reviews yet</small>
+          {% endif %}
+        </td>
+
+        {# Review button cell #}
+        <td>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('social.product_review', product_id=product.id) }}"
+               class="btn btn-sm btn-outline-primary">
+              Review
+            </a>
+          {% else %}
+            <small>
+              <a href="{{ url_for('users.login') }}">Log in to review</a>
+            </small>
+          {% endif %}
+        </td>
       </tr>
     {% endfor %}
   </tbody>
@@ -120,7 +153,6 @@
 
 <script src="{{ url_for('static', filename='js/products.js') }}"></script>
 
-
 <br><br>
 
 {% if current_user.is_authenticated %}
@@ -137,12 +169,11 @@
 function redirectToSellerInventory(event) {
     event.preventDefault();
     const sellerId = document.getElementById('seller-id').value;
-    if(sellerId) {
+    if (sellerId) {
         window.location.href = `/sellers/${sellerId}/inventory`;
     }
 }
 </script>
 {% endif %}
-
 
 {% endblock %}
