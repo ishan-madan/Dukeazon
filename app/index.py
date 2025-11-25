@@ -4,9 +4,7 @@ import datetime
 
 from .models.product import Product
 from .models.purchase import Purchase
-
-from .models.cart import Cart
-from flask import request, jsonify
+from .models.product_seller import ProductSeller
 
 from flask import Blueprint
 bp = Blueprint('index', __name__)
@@ -16,6 +14,7 @@ bp = Blueprint('index', __name__)
 def index():
     # get all available products for sale:
     products = Product.get_all(True)
+    listings_by_product = ProductSeller.get_active_listings()
     # find the products current user has bought:
     if current_user.is_authenticated:
         purchases = Purchase.get_all_by_uid_since(
@@ -25,5 +24,5 @@ def index():
     # render the page by adding information to the index.html file
     return render_template('index.html',
                            avail_products=products,
-                           purchase_history=purchases)
-
+                           purchase_history=purchases,
+                           product_listings=listings_by_product)

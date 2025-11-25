@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Order Fulfillment</h1>
+    <a href="{{ url_for('cart.cart', user_id=seller_id) }}" class="btn btn-secondary">Back to Cart</a>
+  </div>
+
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+  <div class="alert alert-info">
+    {% for message in messages %}
+      <div>{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  {% if items %}
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Order #</th>
+          <th>Date</th>
+          <th>Buyer</th>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Subtotal</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.order_id }}</td>
+          <td>{{ item.order_created_at }}</td>
+          <td>{{ item.buyer_name }}</td>
+          <td>{{ item.product_name }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>${{ "%.2f"|format(item.subtotal) }}</td>
+          <td>
+            {% if item.fulfilled %}
+              <span class="badge badge-success">Fulfilled</span>
+              {% if item.fulfilled_at %}
+              <div class="small text-muted">{{ item.fulfilled_at }}</div>
+              {% endif %}
+            {% else %}
+              <span class="badge badge-warning">Pending</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if not item.fulfilled %}
+            <form method="post"
+                  action="{{ url_for('cart.fulfill_item', seller_id=seller_id, item_id=item.item_id) }}"
+                  onsubmit="return confirm('Mark this item as fulfilled?');">
+              <button type="submit" class="btn btn-sm btn-primary">Mark Fulfilled</button>
+            </form>
+            {% else %}
+            <span class="text-muted">Complete</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="alert alert-info">No order items to fulfill.</div>
+  {% endif %}
+</div>
+{% endblock %}

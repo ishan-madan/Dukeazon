@@ -74,6 +74,33 @@ ORDER BY p.name
         return result
 
     @staticmethod
+    def get_active_listings():
+        rows = app.db.execute('''
+SELECT ps.id,
+       ps.product_id,
+       ps.seller_id,
+       ps.price,
+       ps.quantity,
+       u.firstname || ' ' || u.lastname AS seller_name
+FROM ProductSeller ps
+JOIN Users u ON ps.seller_id = u.id
+WHERE ps.is_active = TRUE AND ps.quantity > 0
+ORDER BY ps.product_id, ps.price
+''')
+
+        listings = {}
+        for row in rows:
+            listings.setdefault(row[1], []).append({
+                "listing_id": row[0],
+                "product_id": row[1],
+                "seller_id": row[2],
+                "price": row[3],
+                "quantity": row[4],
+                "seller_name": row[5]
+            })
+        return listings
+
+    @staticmethod
     def add(seller_id, product_id, price, quantity, is_active=True):
         """
         Add a new product listing for a seller.

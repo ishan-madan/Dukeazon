@@ -1,23 +1,31 @@
-\COPY Users FROM '/home/ubuntu/mini-amazon-skeleton/db/data/Users.csv' WITH DELIMITER ',' NULL '' CSV
+\COPY Users (id, email, password, firstname, lastname, balance) FROM 'Users.csv' WITH DELIMITER ',' NULL '' CSV
 -- since id is auto-generated; we need the next command to adjust the counter
 -- for auto-generation so next INSERT will not clash with ids loaded above:
 SELECT pg_catalog.setval('public.users_id_seq',
-                         (SELECT MAX(id)+1 FROM Users),
+                         COALESCE((SELECT MAX(id)+1 FROM Users), 1),
                          false);
 
-\COPY Products FROM '/home/ubuntu/mini-amazon-skeleton/db/data/Products.csv' WITH DELIMITER ',' NULL '' CSV
+\COPY Products (id, name, price, available, image_link) FROM 'Products.csv' WITH DELIMITER ',' NULL '' CSV
 SELECT pg_catalog.setval('public.products_id_seq',
-                         (SELECT MAX(id)+1 FROM Products),
+                         COALESCE((SELECT MAX(id)+1 FROM Products), 1),
                          false);
 
-\COPY Purchases FROM '/home/ubuntu/mini-amazon-skeleton/db/data/Purchases.csv' WITH DELIMITER ',' NULL '' CSV
+\COPY Purchases (id, uid, pid, time_purchased) FROM 'Purchases.csv' WITH DELIMITER ',' NULL '' CSV
 SELECT pg_catalog.setval('public.purchases_id_seq',
-                         (SELECT MAX(id)+1 FROM Purchases),
+                         COALESCE((SELECT MAX(id)+1 FROM Purchases), 1),
                          false);
 
-\COPY Cart FROM '/home/ubuntu/mini-amazon-skeleton/db/data/Cart.csv' WITH DELIMITER ',' NULL '' CSV;
-
-\COPY ProductSeller FROM 'ProductSeller.csv' WITH DELIMITER ',' NULL '' CSV
+\COPY ProductSeller (seller_id, product_id, price, quantity, is_active) FROM 'ProductSeller.csv' WITH DELIMITER ',' NULL '' CSV
 SELECT pg_catalog.setval('public.productseller_id_seq',
-                         (SELECT MAX(id)+1 FROM ProductSeller),
+                         COALESCE((SELECT MAX(id)+1 FROM ProductSeller), 1),
+                         false);
+
+\COPY Cart (user_id, product_id, listing_id, seller_id, unit_price, quantity) FROM 'Cart.csv' WITH DELIMITER ',' NULL '' CSV;
+
+SELECT pg_catalog.setval('public.orders_id_seq',
+                         COALESCE((SELECT MAX(id)+1 FROM Orders), 1),
+                         false);
+
+SELECT pg_catalog.setval('public.orderitems_id_seq',
+                         COALESCE((SELECT MAX(id)+1 FROM OrderItems), 1),
                          false);

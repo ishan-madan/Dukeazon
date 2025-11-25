@@ -2,147 +2,216 @@
 
 {% block content %}
 
-<br><br>
+<ul class="nav nav-tabs" id="homeTabs" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" id="shop-tab" data-toggle="tab" href="#shop" role="tab" aria-controls="shop" aria-selected="true">Shop</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="seller-tab" data-toggle="tab" href="#seller-tools" role="tab" aria-controls="seller-tools" aria-selected="false">Seller tools</a>
+  </li>
+</ul>
 
-<h2>Products for sale:</h2>
-<table class='table table-hover table-bordered container'>
-  <thead class="thead-dark">
-    <tr>
-      <th scope="col">Product ID</th>
-      <th scope="col">Product Name</th>
-      <th scope="col">Price</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for product in avail_products%}
-      <tr>
-        <th scope="row">{{product.id}}</th>
-        <td>{{product.name}}</td>
-        <td>{{product.price}}</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<div class="container mt-4">
-  <h3>Find the top-k most expensive products</h3>
-  <form id="top-k-form" class="form-inline">
-    <div class="form-group mb-2">
-      <label class="sr-only" for="top-k-input">Top k</label>
-      <input type="number"
-             class="form-control"
-             id="top-k-input"
-             name="k"
-             placeholder="Enter k"
-             min="1"
-             required>
+<div class="tab-content mt-4" id="homeTabsContent">
+  <div class="tab-pane fade show active" id="shop" role="tabpanel" aria-labelledby="shop-tab">
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+              <h2 class="h4 mb-3 mb-md-0">Products for sale</h2>
+              <form id="top-k-form" class="form-inline">
+                <label for="top-k-input" class="mr-2 mb-2 mb-sm-0 font-weight-semibold">Find top k most expensive products</label>
+                <input type="number"
+                       class="form-control mr-2 mb-2 mb-sm-0"
+                       id="top-k-input"
+                       name="k"
+                       placeholder="Enter k"
+                       min="1"
+                       required>
+                <button type="submit" class="btn btn-primary">Search</button>
+              </form>
+            </div>
+            <div id="top-k-alert" class="text-danger mb-3"></div>
+            <div id="top-k-results" class="mb-3"></div>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead class="thead-dark">
+                  <tr>
+                    <th scope="col">Product ID</th>
+                    <th scope="col">Product Name</th>
+                    <th scope="col" class="text-right">Base Price</th>
+                    <th scope="col">Available Sellers</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for product in avail_products%}
+                  <tr>
+                    <th scope="row">{{product.id}}</th>
+                    <td>{{product.name}}</td>
+                    <td class="text-right">${{ '%.2f'|format(product.price) }}</td>
+                    <td>
+                      {% set listings = product_listings.get(product.id) %}
+                      {% if listings %}
+                        {% for listing in listings %}
+                        <div class="p-2 border rounded mb-2 d-flex flex-column flex-lg-row align-items-lg-center">
+                          <div class="mr-lg-3">
+                            <div class="font-weight-semibold">{{ listing.seller_name }}</div>
+                            <small class="text-muted">Price ${{ '%.2f'|format(listing.price) }} • {{ listing.quantity }} in stock</small>
+                          </div>
+                          {% if current_user.is_authenticated %}
+                          <form method="post"
+                                action="{{ url_for('cart.add_item', user_id=current_user.id) }}"
+                                class="form-inline ml-lg-auto mt-2 mt-lg-0">
+                            <input type="hidden" name="listing_id" value="{{ listing.listing_id }}">
+                            <label class="sr-only" for="qty-{{ listing.listing_id }}">Quantity</label>
+                            <input id="qty-{{ listing.listing_id }}"
+                                   name="quantity"
+                                   type="number"
+                                   min="1"
+                                   max="{{ listing.quantity }}"
+                                   value="1"
+                                   class="form-control form-control-sm mr-2"
+                                   style="width:90px;">
+                            <button type="submit" class="btn btn-sm btn-primary">Add to Cart</button>
+                          </form>
+                          {% else %}
+                          <div class="text-muted mt-2">Log in to add to cart.</div>
+                          {% endif %}
+                        </div>
+                        {% endfor %}
+                      {% else %}
+                        <span class="text-muted">No active sellers.</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h3 class="h5">Your cart</h3>
+            <p class="mb-2 text-muted small">Items and totals are shown on the cart page.</p>
+            {% if current_user.is_authenticated %}
+            <button class="btn btn-primary btn-block"
+                    onclick="window.location.href='/cart/{{ current_user.id }}'">
+              Go to My Cart
+            </button>
+            {% else %}
+            <p class="small">Log in to view your cart or enter a user ID to view a cart:</p>
+            <div class="input-group mb-3">
+              <input id="userId" type="number" class="form-control" placeholder="Enter user ID">
+              <div class="input-group-append">
+                <button class="btn btn-primary" type="button" onclick="viewCart()">View Cart</button>
+              </div>
+            </div>
+            <a href="{{ url_for('users.login') }}" class="btn btn-outline-secondary btn-block">Log in</a>
+            {% endif %}
+            <small class="text-muted d-block mt-2">You can update quantities and checkout from the cart page.</small>
+          </div>
+        </div>
+      </div>
     </div>
-    <button type="submit" class="btn btn-primary mb-2 ml-2">Search</button>
-  </form>
-  <div id="top-k-alert" class="text-danger mb-2"></div>
-  <div id="top-k-results"></div>
-</div>
-
-<br><br>
-
-{% if current_user.is_authenticated %}
-  <h2>View Your Cart</h2>
-  <button class="btn btn-primary mt-3"
-          onclick="window.location.href='/cart/{{ current_user.id }}'">
-    Go to My Cart
-  </button>
-
-{% else %}
-  <p>
-    <a href="{{ url_for('users.login') }}">Log in</a> to see your purchase history or view your cart.
-  </p>
-
-  <h2 class="mt-4">View Cart</h2>
-  <div class="input-group mb-3" style="max-width: 400px;">
-    <input id="userId" type="number" class="form-control" placeholder="Enter user ID">
-    <button class="btn btn-primary" type="button" onclick="viewCart()">View Cart</button>
   </div>
 
-  <script>
-    function viewCart() {
-      if (id) {
-        window.location.href = `/cart/0`;
-      } else {
-        alert('Please enter a valid user ID.');
-      }
-    }
-  </script>
-{% endif %}
-
-<br><br>
-
-{% if current_user.is_authenticated %}
-<h2>Your Inventory (Seller):</h2>
-{% if inventory %}
-<table class='table table-hover table-bordered container'>
-  <thead class="thead-dark">
-    <tr>
-      <th scope="col">Listing ID</th>
-      <th scope="col">Product Name</th>
-      <th scope="col">Base Price</th>
-      <th scope="col">Seller Price</th>
-      <th scope="col">Quantity</th>
-      <th scope="col">Active</th>
-      <th scope="col">Image</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for item in inventory %}
-      <tr>
-        <th scope="row">{{ item.listing_id }}</th>
-        <td>{{ item.product_name }}</td>
-        <td>${{ '%.2f'|format(item.base_price) }}</td>
-        <td>${{ '%.2f'|format(item.seller_price) }}</td>
-        <td>{{ item.quantity }}</td>
-        <td>{{ 'Yes' if item.is_active else 'No' }}</td>
-        <td>
-          {% if item.image_link %}
-            <a href="{{ item.image_link }}" target="_blank">
-              <img src="{{ item.image_link }}" alt="{{ item.product_name }}" style="width:100px; height:auto; border-radius:8px;">
-            </a>
-          {% else %}
-            <img src="https://via.placeholder.com/100?text=No+Image" alt="No image">
-          {% endif %}
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p>You currently have no inventory listed.</p>
-{% endif %}
-{% endif %}
+  <div class="tab-pane fade" id="seller-tools" role="tabpanel" aria-labelledby="seller-tab">
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h3 class="h5">Your inventory</h3>
+            {% if current_user.is_authenticated %}
+              {% if inventory %}
+              <div class="table-responsive mt-3">
+                <table class='table table-hover table-bordered'>
+                  <thead class="thead-light">
+                    <tr>
+                      <th scope="col">Listing ID</th>
+                      <th scope="col">Product Name</th>
+                      <th scope="col">Base Price</th>
+                      <th scope="col">Seller Price</th>
+                      <th scope="col">Quantity</th>
+                      <th scope="col">Active</th>
+                      <th scope="col">Image</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in inventory %}
+                    <tr>
+                      <th scope="row">{{ item.listing_id }}</th>
+                      <td>{{ item.product_name }}</td>
+                      <td>${{ '%.2f'|format(item.base_price) }}</td>
+                      <td>${{ '%.2f'|format(item.seller_price) }}</td>
+                      <td>{{ item.quantity }}</td>
+                      <td>{{ 'Yes' if item.is_active else 'No' }}</td>
+                      <td>
+                        {% if item.image_link %}
+                        <a href="{{ item.image_link }}" target="_blank">
+                          <img src="{{ item.image_link }}" alt="{{ item.product_name }}" style="width:80px; height:auto; border-radius:6px;">
+                        </a>
+                        {% else %}
+                        <img src="https://via.placeholder.com/80?text=No+Image" alt="No image">
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              {% else %}
+              <p class="mb-0">You currently have no inventory listed.</p>
+              {% endif %}
+            {% else %}
+            <p class="mb-0">Log in to manage your inventory.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h3 class="h5">Search seller inventory</h3>
+            {% if current_user.is_authenticated %}
+            <form id="seller-search-form" onsubmit="redirectToSellerInventory(event)">
+              <div class="form-group">
+                <label for="seller-id">Seller ID</label>
+                <input type="number" class="form-control" id="seller-id" placeholder="Enter Seller ID" required>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block">Search</button>
+            </form>
+            {% else %}
+            <p class="small mb-0">Log in to search seller inventory.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="{{ url_for('static', filename='js/products.js') }}"></script>
 
-
-<br><br>
-
-{% if current_user.is_authenticated %}
-<h2>Search Seller Inventory</h2>
-<form id="seller-search-form" onsubmit="redirectToSellerInventory(event)">
-  <div class="form-group">
-    <label for="seller-id">Seller ID:</label>
-    <input type="number" class="form-control" id="seller-id" placeholder="Enter Seller ID" required>
-  </div>
-  <button type="submit" class="btn btn-primary">Search</button>
-</form>
-
 <script>
-function redirectToSellerInventory(event) {
+  function viewCart() {
+    const userId = document.getElementById('userId').value;
+    if (!userId) {
+      alert('Please enter a valid user ID.');
+      return;
+    }
+    window.location.href = `/cart/${userId}`;
+  }
+
+  function redirectToSellerInventory(event) {
     event.preventDefault();
     const sellerId = document.getElementById('seller-id').value;
-    if(sellerId) {
-        window.location.href = `/sellers/${sellerId}/inventory`;
+    if (sellerId) {
+      window.location.href = `/sellers/${sellerId}/inventory`;
     }
-}
+  }
 </script>
-{% endif %}
-
 
 {% endblock %}
