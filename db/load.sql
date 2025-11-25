@@ -34,3 +34,17 @@ SELECT pg_catalog.setval('public.orders_id_seq',
 SELECT pg_catalog.setval('public.orderitems_id_seq',
                          COALESCE((SELECT MAX(id)+1 FROM OrderItems), 1),
                          false);
+
+
+\COPY product_reviews FROM '/home/ubuntu/mini-amazon-skeleton/db/data/ProductReviews.csv' WITH DELIMITER ',' NULL '' CSV HEADER;
+SELECT pg_catalog.setval('public.product_reviews_product_review_id_seq',
+                         (SELECT COALESCE(MAX(product_review_id)+1, 1) FROM product_reviews),
+                         false);
+
+\COPY seller_reviews FROM '/home/ubuntu/mini-amazon-skeleton/db/data/SellerReviews.csv' WITH DELIMITER ',' NULL '' CSV HEADER;
+SELECT pg_catalog.setval('public.seller_reviews_seller_review_id_seq',
+                         (SELECT COALESCE(MAX(seller_review_id)+1, 1) FROM seller_reviews),
+                         false);
+
+
+                         

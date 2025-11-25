@@ -1,4 +1,4 @@
-from flask import render_template, request
+from flask import render_template, request, current_app as app
 from flask_login import current_user
 import datetime
 import math
@@ -44,14 +44,37 @@ def index():
                                                 
     if current_user.is_authenticated:
         purchases = Purchase.get_all_by_uid_since(
-            current_user.id, datetime.datetime(1980, 9, 14, 0, 0, 0))
+            current_user.id, datetime.datetime(1980, 9, 14, 0, 0, 0)
+        )
     else:
         purchases = None
-                                                                  
+
+    # rating summary for each product
+    rows = app.db.execute("""
+        SELECT
+            product_id,
+            AVG(rating) AS avg_rating,
+            COUNT(*)   AS review_count
+        FROM product_reviews
+        GROUP BY product_id
+    """)
+
+    # build a dict: { product_id: {"avg": float, "count": int}, ... }
+    product_ratings = {
+        r.product_id: {
+            "avg": float(r.avg_rating),
+            "count": r.review_count
+        }
+        for r in rows
+    }
+
+    # render the page by adding information to the index.html file
     return render_template('index.html',
                            avail_products=paginated_products,
                            purchase_history=purchases,
                            product_listings=listings_by_product,
                            page=page,
                            total_pages=total_pages,
-                           page_numbers=list(range(1, total_pages + 1)))
+                           page_numbers=list(range(1, total_pages + 1)),
+                           product_ratings=product_ratings
+                           )
