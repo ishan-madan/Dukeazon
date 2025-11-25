@@ -135,3 +135,27 @@ UPDATE ProductSeller
 SET is_active = FALSE
 WHERE id = :id
 ''', id=id)
+
+    @staticmethod
+    def activate(id):
+        """
+        Re-activate a product listing by setting is_active = TRUE.
+        """
+        app.db.execute('''
+UPDATE ProductSeller
+SET is_active = TRUE
+WHERE id = :id
+''', id=id)
+
+    @staticmethod
+    def has_active_listings_for_product(product_id):
+        """
+        Return True if there exists at least one active listing with quantity > 0 for the given product.
+        """
+        rows = app.db.execute('''
+SELECT 1
+FROM ProductSeller
+WHERE product_id = :product_id AND is_active = TRUE AND quantity > 0
+LIMIT 1
+''', product_id=product_id)
+        return len(rows) > 0
