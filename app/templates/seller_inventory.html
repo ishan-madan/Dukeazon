@@ -2,6 +2,49 @@
 {% block content %}
 <h2 class="mt-4 mb-3">Seller Inventory</h2>
 
+{% if analytics %}
+  <!-- Analytics Summary -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card text-white bg-info">
+        <div class="card-body">
+          <h5 class="card-title">Total Units Sold (All time)</h5>
+          <p class="card-text display-4">{{ analytics.totals_all.units }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-white bg-success">
+        <div class="card-body">
+          <h5 class="card-title">Units Sold (Last 30 days)</h5>
+          <p class="card-text display-4">{{ analytics.totals_recent.units }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-white bg-secondary">
+        <div class="card-body">
+          <h5 class="card-title">Revenue (Last 30 days)</h5>
+          <p class="card-text display-4">${{ '{:,.2f}'.format(analytics.totals_recent.revenue) }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top products chart -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Top Products (Last 30 days)</h5>
+    </div>
+    <div class="card-body">
+      <canvas id="topProductsChart" width="400" height="120"
+              data-labels='{{ analytics.top_products | map(attribute="product_name") | list | tojson | safe }}'
+              data-values='{{ analytics.top_products | map(attribute="units_sold") | list | tojson | safe }}'>
+      </canvas>
+    </div>
+  </div>
+{% endif %}
+
 <!-- Add Product Form -->
 <div class="card mb-4">
   <div class="card-header bg-primary text-white">
@@ -114,4 +157,44 @@
 {% endif %}
 
 <a href="{{ url_for('index.index') }}" class="btn btn-secondary mt-3">Back Home</a>
+
+{% if analytics %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    (function(){
+      try {
+        const ctx = document.getElementById('topProductsChart');
+        if (!ctx) return;
+        // Read JSON-encoded data from data-* attributes to avoid breaking JS linters
+        const labels = JSON.parse(ctx.getAttribute('data-labels') || '[]');
+        const data = JSON.parse(ctx.getAttribute('data-values') || '[]');
+
+        new Chart(ctx.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Units sold',
+              backgroundColor: '#4e73df',
+              data: data
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { beginAtZero: true }
+            },
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+      } catch (e) {
+        console.error('Chart render error', e);
+      }
+    })();
+  </script>
+{% endif %}
+
 {% endblock %}
