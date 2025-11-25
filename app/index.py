@@ -17,13 +17,30 @@ def index():
     products = Product.get_all(True)
     per_page = 10
     page = request.args.get('page', 1, type=int)
+
+    listings_by_product = ProductSeller.get_active_listings()
+
+    # Ensure products that have active listings appear on the page even if the
+    # Products.available flag is out-of-sync. Append any missing products that
+    # have active listings so sellers' new listings show up immediately.
+    active_product_ids = set(listings_by_product.keys())
+    shown_ids = set(p.id for p in products)
+    missing_ids = active_product_ids - shown_ids
+    if missing_ids:
+        for pid in missing_ids:
+            prod = Product.get(pid)
+            if prod:
+                products.append(prod)
+
+    # Force deterministic ordering by product id
+    products.sort(key=lambda p: p.id)
+
     total_products = len(products)
     total_pages = max(1, math.ceil(total_products / per_page)) if total_products else 1
     page = max(1, min(page, total_pages))
     start = (page - 1) * per_page
     end = start + per_page
     paginated_products = products[start:end]
-    listings_by_product = ProductSeller.get_active_listings()
     # find the products current user has bought:
     if current_user.is_authenticated:
         purchases = Purchase.get_all_by_uid_since(
