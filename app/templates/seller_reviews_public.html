@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Seller reviews for {{ seller.firstname }} {{ seller.lastname }}</h2>
+
+{% if rating_summary and rating_summary.num_reviews > 0 %}
+<p>
+  <strong>Average rating:</strong>
+  {% set stars = (rating_summary.avg_rating or 0)|round(0, 'floor')|int %}
+  {% for _ in range(stars) %}&#9733;{% endfor %}
+  {% for _ in range(5 - stars) %}&#9734;{% endfor %}
+  <small>
+    ({{ "%.2f"|format(rating_summary.avg_rating) }}
+     from {{ rating_summary.num_reviews }}
+     review{{ 's' if rating_summary.num_reviews != 1 else '' }})
+  </small>
+</p>
+{% else %}
+<p>No seller reviews yet.</p>
+{% endif %}
+
+<hr>
+
+<h3>All reviews for this seller</h3>
+{% if all_reviews %}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Rating</th>
+      <th>Comment</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in all_reviews %}
+    <tr>
+      <td>{{ r.firstname }} {{ r.lastname }}</td>
+      <td>
+        {% for _ in range(r.rating) %}&#9733;{% endfor %}
+        {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
+        <small>({{ r.rating }})</small>
+      </td>
+      <td>{{ r.body }}</td>
+      <td>{{ r.created_at }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No reviews yet.</p>
+{% endif %}
+
+{% endblock %}

@@ -1,77 +1,194 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set product_title_map = {
+    'vanilla ice cream': 'Vanilla Ice Cream',
+    'chocolate ice cream': 'Chocolate Ice Cream',
+    'strawberry ice cream': 'Strawberry Ice Cream',
+    '6-pack of paycheck pilsners': '6-Pack of Paycheck Pilsners',
+    'seven fabergé easter eggs': 'Seven Fabergé Easter Eggs',
+    'painting - the storm on the sea of galilee': 'Painting: The Storm on the Sea of Galilee'
+  } %}
 
-<br><br>
+<ul class="nav nav-tabs" id="homeTabs" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" id="shop-tab" data-toggle="tab" href="#shop" role="tab" aria-controls="shop" aria-selected="true">Shop</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="seller-tab" data-toggle="tab" href="#seller-tools" role="tab" aria-controls="seller-tools" aria-selected="false">Seller Tools</a>
+  </li>
+</ul>
 
-<h2>Products for sale:</h2>
-<table class='table table-hover table-bordered container'>
-  <thead class="thead-dark">
-    <tr>
-      <th scope="col">Product ID</th>
-      <th scope="col">Product Name</th>
-      <th scope="col">Price</th>
-      <th scope="col">Rating</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for product in avail_products%}
-      <tr>
-        <th scope="row">{{product.id}}</th>
-        <td>{{product.name}}</td>
-        <td>{{product.price}}</td>
-        <td>
-          {% set r = product_ratings.get(product.id) if product_ratings is defined else None %}
-          {% if r and r.count and r.count > 0 %}
-            {% set stars = (r.avg or 0)|round(0, 'floor')|int %}
-            {% for _ in range(stars) %}&#9733;{% endfor %}
-            <span class="ml-1">[{{ r.count }}]</span>
-          {% else %}
-            <span class="text-muted">No reviews</span>
-          {% endif %}
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<div class="container mt-4">
-  <h3>Find the top-k most expensive products</h3>
-  <form id="top-k-form" class="form-inline">
-    <div class="form-group mb-2">
-      <label class="sr-only" for="top-k-input">Top k</label>
-      <input type="number"
-             class="form-control"
-             id="top-k-input"
-             name="k"
-             placeholder="Enter k"
-             min="1"
-             required>
+<div class="tab-content mt-4" id="homeTabsContent">
+  <div class="tab-pane fade show active" id="shop" role="tabpanel" aria-labelledby="shop-tab">
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card mb-4">
+          <div class="card-header">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+              <h2 class="h5 mb-3 mb-md-0 text-white">Products for Sale</h2>
+              <a class="btn btn-primary" href="{{ url_for('products.browse') }}">Browse &amp; Search</a>
+            </div>
+          </div>
+          <div class="card-body">
+            {% if total_pages > 1 %}
+            <nav aria-label="Products pagination top" class="mb-3">
+              <ul class="pagination justify-content-center">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=page-1) }}">Previous</a>
+                </li>
+                {% for number in page_numbers %}
+                <li class="page-item {% if number == page %}active{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=number) }}">{{ number }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=page+1) }}">Next</a>
+                </li>
+              </ul>
+            </nav>
+            {% endif %}
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead class="thead-dark">
+                  <tr>
+                    <th scope="col">Product ID</th>
+                    <th scope="col">Product Name</th>
+                    <th scope="col" class="text-right">Base Price</th>
+                    <th scope="col">Available Sellers</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for product in avail_products%}
+                  <tr>
+                    <th scope="row">{{product.id}}</th>
+                    <td>
+                      {% set full_title = product_title_map.get(product.name|lower, product.name|title) %}
+                      <a href="{{ url_for('products.detail', product_id=product.id) }}">
+                        {% if full_title|length > 17 %}
+                          {{ full_title[:17] }}...
+                        {% else %}
+                          {{ full_title }}
+                        {% endif %}
+                      </a>
+                      {% set summary = product_ratings.get(product.id) if product_ratings is defined else None %}
+                      <span class="ml-2">
+                        {% if summary %}
+                          {% set num = summary.get('count', 0) %}
+                          {% if num > 0 %}
+                            {% set avg = summary.get('avg', 0) %}
+                            {% set filled = avg|round(0, 'floor')|int %}
+                            {% if filled > 5 %}
+                              {% set filled = 5 %}
+                            {% elif filled < 0 %}
+                              {% set filled = 0 %}
+                            {% endif %}
+                            {% set empty = 5 - filled %}
+                            <span>
+                              <span style="color: #f5c518;">
+                                {% for _ in range(filled) %}&#9733;{% endfor %}
+                              </span>
+                              <span style="color: #cccccc;">
+                                {% for _ in range(empty) %}&#9734;{% endfor %}
+                              </span>
+                              <span class="text-muted">[{{ num }}]</span>
+                            </span>
+                          {% else %}
+                            <small class="text-muted">No reviews yet</small>
+                          {% endif %}
+                        {% else %}
+                          <small class="text-muted">No reviews yet</small>
+                        {% endif %}
+                      </span>
+                    </td>
+                    <td class="text-right">${{ '{:,.2f}'.format(product.price) }}</td>
+                    <td>
+                      {% set listings = product_listings.get(product.id) %}
+                      {% if listings %}
+                        {% for listing in listings %}
+                        <div class="p-2 border rounded mb-2 d-flex flex-column flex-lg-row align-items-lg-center">
+                          <div class="mr-lg-3">
+                            {% set seller_display = listing.seller_name %}
+                            <div class="font-weight-bold">{{ seller_display }}</div>
+                            <small class="text-muted">Price ${{ '{:,.2f}'.format(listing.price) }} • {{ listing.quantity }} in stock</small>
+                          </div>
+                          {% if current_user.is_authenticated %}
+                          <form method="post"
+                                action="{{ url_for('cart.add_item', user_id=current_user.id) }}"
+                                class="form-inline ml-lg-auto mt-2 mt-lg-0">
+                            <input type="hidden" name="listing_id" value="{{ listing.listing_id }}">
+                            <label class="sr-only" for="qty-{{ listing.listing_id }}">Quantity</label>
+                            <input id="qty-{{ listing.listing_id }}"
+                                   name="quantity"
+                                   type="number"
+                                   min="1"
+                                   max="{{ listing.quantity }}"
+                                   value="1"
+                                   class="form-control form-control-sm mr-2"
+                                   style="width:90px;">
+                            <button type="submit" class="btn btn-sm btn-primary">Add to Cart</button>
+                          </form>
+                          {% else %}
+                          <div class="text-muted mt-2">Log in to add to cart.</div>
+                          {% endif %}
+                        </div>
+                        {% endfor %}
+                      {% else %}
+                        <span class="text-muted">No active sellers.</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% if total_pages > 1 %}
+            <nav aria-label="Products pagination">
+              <ul class="pagination justify-content-center">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=page-1) }}">Previous</a>
+                </li>
+                {% for number in page_numbers %}
+                <li class="page-item {% if number == page %}active{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=number) }}">{{ number }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index', page=page+1) }}">Next</a>
+                </li>
+              </ul>
+            </nav>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h3 class="h6 mb-0 text-white">Your Cart</h3>
+          </div>
+          <div class="card-body">
+            <p class="mb-2 text-muted small">Items and totals are shown on the cart page.</p>
+            {% if current_user.is_authenticated %}
+            <button class="btn btn-primary btn-block"
+                    onclick="window.location.href='/cart/{{ current_user.id }}'">
+              Go to My Cart
+            </button>
+            {% else %}
+            <p class="small">Log in to view your cart or enter a user ID to view a cart:</p>
+            <div class="input-group mb-3">
+              <input id="userId" type="number" class="form-control" placeholder="Enter user ID">
+              <div class="input-group-append">
+                <button class="btn btn-primary" type="button" onclick="viewCart()">View Cart</button>
+              </div>
+            </div>
+            <a href="{{ url_for('users.login') }}" class="btn btn-outline-secondary btn-block">Log in</a>
+            {% endif %}
+            <small class="text-muted d-block mt-2">You can update quantities and checkout from the cart page.</small>
+          </div>
+        </div>
+      </div>
     </div>
-    <button type="submit" class="btn btn-primary mb-2 ml-2">Search</button>
-  </form>
-  <div id="top-k-alert" class="text-danger mb-2"></div>
-  <div id="top-k-results"></div>
-</div>
-
-<br><br>
-
-{% if current_user.is_authenticated %}
-  <h2>View Your Cart</h2>
-  <button class="btn btn-primary mt-3"
-          onclick="window.location.href='/cart/{{ current_user.id }}'">
-    Go to My Cart
-  </button>
-
-{% else %}
-  <p>
-    <a href="{{ url_for('users.login') }}">Log in</a> to see your purchase history or view your cart.
-  </p>
-
-  <h2 class="mt-4">View Cart</h2>
-  <div class="input-group mb-3" style="max-width: 400px;">
-    <input id="userId" type="number" class="form-control" placeholder="Enter user ID">
-    <button class="btn btn-primary" type="button" onclick="viewCart()">View Cart</button>
   </div>
 
   <div class="tab-pane fade" id="seller-tools" role="tabpanel" aria-labelledby="seller-tab">
@@ -101,7 +218,14 @@
                     {% for item in inventory %}
                     <tr>
                       <th scope="row">{{ item.listing_id }}</th>
-                      <td>{{ product_title_map.get(item.product_name|lower, item.product_name|title) }}</td>
+                      {% set full_title = product_title_map.get(item.product_name|lower, item.product_name|title) %}
+                      <td>
+                        {% if full_title|length > 17 %}
+                          {{ full_title[:17] }}...
+                        {% else %}
+                          {{ full_title }}
+                        {% endif %}
+                      </td>
                       <td>${{ '{:,.2f}'.format(item.base_price) }}</td>
                       <td>${{ '{:,.2f}'.format(item.seller_price) }}</td>
                       <td>{{ item.quantity }}</td>
@@ -155,19 +279,6 @@
 
 <script src="{{ url_for('static', filename='js/products.js') }}"></script>
 
-
-<br><br>
-
-{% if current_user.is_authenticated %}
-<h2>Search Seller Inventory</h2>
-<form id="seller-search-form" onsubmit="redirectToSellerInventory(event)">
-  <div class="form-group">
-    <label for="seller-id">Seller ID:</label>
-    <input type="number" class="form-control" id="seller-id" placeholder="Enter Seller ID" required>
-  </div>
-  <button type="submit" class="btn btn-primary">Search</button>
-</form>
-
 <script>
   function viewCart() {
     const userId = document.getElementById('userId').value;
@@ -181,12 +292,11 @@
   function redirectToSellerInventory(event) {
     event.preventDefault();
     const sellerId = document.getElementById('seller-id').value;
-    if(sellerId) {
-        window.location.href = `/sellers/${sellerId}/inventory`;
+    if (sellerId) {
+      window.location.href = `/sellers/${sellerId}/inventory`;
     }
   }
 </script>
-{% endif %}
-
 
 {% endblock %}
+

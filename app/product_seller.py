@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app as app
-from flask_login import current_user, current_user
+from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, DecimalField, IntegerField, SubmitField
 from wtforms.validators import DataRequired, NumberRange, ValidationError
@@ -31,6 +31,7 @@ class RemoveProductForm(FlaskForm):
 
 
 @bp.route('/<int:seller_id>/inventory')
+@login_required
 def seller_inventory(seller_id):
     """
     Render a seller's inventory as an HTML page.

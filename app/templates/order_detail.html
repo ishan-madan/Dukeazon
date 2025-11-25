@@ -43,6 +43,18 @@
               {% if item.fulfilled_at %}
               <div class="small text-muted">at {{ item.fulfilled_at }}</div>
               {% endif %}
+              {# Allow buyer to leave a seller review for this seller once item is fulfilled #}
+              {% if current_user.is_authenticated and current_user.id == user_id and item.seller_id != current_user.id %}
+                <div class="mt-2">
+                  {% set existing_review_id = seller_reviews_map.get(item.seller_id) if seller_reviews_map is defined else None %}
+                  {% if existing_review_id %}
+                    <a href="{{ url_for('social.seller_review', seller_id=item.seller_id) }}" class="btn btn-sm btn-outline-primary">Update Review</a>
+                    <div class="small text-muted mt-1">You have already reviewed this seller.</div>
+                  {% else %}
+                    <a href="{{ url_for('social.seller_review', seller_id=item.seller_id) }}" class="btn btn-sm btn-outline-primary">Save Review</a>
+                  {% endif %}
+                </div>
+              {% endif %}
             {% else %}
               <span class="badge badge-warning">Pending</span>
             {% endif %}

@@ -7,6 +7,57 @@ from pathlib import Path
 
 bp = Blueprint('social', __name__)
 
+
+@bp.route('/sellers/<int:seller_id>/reviews', methods=['GET'])
+def public_seller_reviews(seller_id):
+    """
+    Public page: show all reviews for a seller and rating summary.
+    Does not require login.
+    """
+    # 1. Fetch seller basic info
+    seller_rows = app.db.execute(
+        """
+        SELECT id, firstname, lastname
+        FROM Users
+        WHERE id = :sid
+        """,
+        sid=seller_id
+    )
+    if not seller_rows:
+        return render_template('seller_reviews_public.html', seller=None, all_reviews=None, rating_summary=None)
+
+    seller = seller_rows[0]
+
+    # 2. All reviews for this seller
+    all_reviews = app.db.execute(
+        """
+        SELECT sr.rating,
+               sr.body,
+               sr.created_at,
+               u.firstname,
+               u.lastname
+        FROM seller_reviews sr
+        JOIN users u ON sr.user_id = u.id
+        WHERE sr.seller_id = :sid
+        ORDER BY sr.created_at DESC
+        """,
+        sid=seller_id
+    )
+
+    # 3. Summary (avg + count)
+    summary_rows = app.db.execute(
+        """
+        SELECT AVG(rating) AS avg_rating,
+               COUNT(*)    AS num_reviews
+        FROM seller_reviews
+        WHERE seller_id = :sid
+        """,
+        sid=seller_id
+    )
+    rating_summary = summary_rows[0] if summary_rows else None
+
+    return render_template('seller_reviews_public.html', seller=seller, all_reviews=all_reviews, rating_summary=rating_summary)
+
 @bp.route('/social')
 @login_required
 def social_page():

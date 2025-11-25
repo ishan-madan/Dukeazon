@@ -1,5 +1,5 @@
 from decimal import Decimal
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, abort, current_app as app
 from flask_login import login_required, current_user
 
 from .models.cart import Cart
@@ -146,13 +146,32 @@ def order_detail(user_id, order_id):
     if not data:
         abort(404)
 
+    # Determine which sellers (in this order) the current user has already reviewed
+    seller_ids = sorted({item['seller_id'] for item in data["items"]})
+    seller_reviews_map = {}
+    if seller_ids:
+        # Query seller_reviews for this user and these seller_ids
+        rows = app.db.execute(
+            """
+            SELECT seller_id, seller_review_id
+            FROM seller_reviews
+            WHERE user_id = :uid
+              AND seller_id = ANY(:sids)
+            """,
+            uid=current_user.id,
+            sids=seller_ids
+        )
+        for r in rows:
+            seller_reviews_map[r.seller_id] = r.seller_review_id
+
     return render_template('order_detail.html',
                            title=f"Order #{order_id}",
                            user_id=user_id,
                            order=data["order"],
                            items=data["items"],
                            display_status=data["display_status"],
-                           is_fulfilled=data["is_fulfilled"])
+                           is_fulfilled=data["is_fulfilled"],
+                           seller_reviews_map=seller_reviews_map)
 
 
 @bp.route('/seller/<int:seller_id>/fulfillment', methods=['GET'])
