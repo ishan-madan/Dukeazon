@@ -138,6 +138,38 @@ WHERE id = :id
 ''', id=id)
 
     @staticmethod
+    def get_active_by_product(product_id):
+        """
+        Get active listings for a product with seller name, price, and quantity.
+        """
+        rows = app.db.execute('''
+SELECT ps.id AS listing_id,
+       ps.product_id,
+       ps.seller_id,
+       ps.price,
+       ps.quantity,
+       u.firstname || ' ' || u.lastname AS seller_name
+FROM ProductSeller ps
+JOIN Users u ON u.id = ps.seller_id
+WHERE ps.product_id = :product_id
+  AND ps.is_active = TRUE
+  AND ps.quantity > 0
+ORDER BY ps.price ASC, ps.id ASC
+''', product_id=product_id)
+
+        listings = []
+        for row in rows:
+            listings.append({
+                "listing_id": row[0],
+                "product_id": row[1],
+                "seller_id": row[2],
+                "price": row[3],
+                "quantity": row[4],
+                "seller_name": row[5]
+            })
+        return listings
+
+    @staticmethod
     def activate(id):
         """
         Re-activate a product listing by setting is_active = TRUE.
@@ -169,10 +201,10 @@ LIMIT 1
         - timeseries: list of {date, units} for the last `days` days (inclusive)
         - totals: totals for the last `days` and all-time
         """
-        # compute cutoff timestamp for recent window
+                                                    
         cutoff = datetime.utcnow() - timedelta(days=days)
 
-        # Top products in the window
+                                    
         top_rows = app.db.execute('''
 SELECT oi.product_id,
        p.name,
@@ -198,7 +230,7 @@ LIMIT :limit
                 "revenue": float(r[3]) if r[3] is not None else 0.0
             })
 
-        # Timeseries: daily units sold in the window
+                                                    
         ts_rows = app.db.execute('''
 SELECT DATE(o.created_at) AS day,
        COALESCE(SUM(oi.quantity),0) AS units
@@ -211,7 +243,7 @@ GROUP BY DATE(o.created_at)
 ORDER BY day
 ''', seller_id=seller_id, cutoff=cutoff)
 
-        # Build a date-indexed map then fill missing days with 0
+                                                                
         ts_map = {row[0].isoformat(): int(row[1]) for row in ts_rows}
         timeseries = []
         for i in range(days, -1, -1):
@@ -219,7 +251,7 @@ ORDER BY day
             key = d.isoformat()
             timeseries.append({"date": key, "units": ts_map.get(key, 0)})
 
-        # Totals: recent window
+                               
         totals_row = app.db.execute('''
 SELECT COALESCE(SUM(oi.quantity),0) AS units,
        COALESCE(SUM(oi.subtotal),0) AS revenue
@@ -231,7 +263,7 @@ WHERE oi.seller_id = :seller_id
 ''', seller_id=seller_id, cutoff=cutoff)
         totals_recent = totals_row[0] if totals_row else (0, 0.0)
 
-        # Totals: all-time
+                          
         all_row = app.db.execute('''
 SELECT COALESCE(SUM(quantity),0) AS units,
        COALESCE(SUM(subtotal),0) AS revenue

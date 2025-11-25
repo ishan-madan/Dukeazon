@@ -15,7 +15,7 @@ def social_page():
         limit = int(request.args.get('limit', 5))
     except ValueError:
         limit = 5
-    limit = max(1, min(limit, 50))  # clamp 1..50
+    limit = max(1, min(limit, 50))               
 
     sql_path = Path(app.root_path).parent / 'sql' / 'get_recent_feedback.sql'
     sql = sql_path.read_text()

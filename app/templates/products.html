@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Browse Products</h2>
+  <form class="mb-4" method="get" action="{{ url_for('products.browse') }}">
+    <div class="form-row">
+      <div class="col-md-4 mb-2">
+        <select class="form-control" name="category">
+          <option value="">All categories</option>
+          {% for category in categories %}
+            <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
+              {{ category.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4 mb-2">
+        <input type="text"
+               class="form-control"
+               name="q"
+               placeholder="Search name or description"
+               value="{{ query }}">
+      </div>
+      <div class="col-md-2 mb-2">
+        <select class="form-control" name="sort">
+          <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+          <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+        </select>
+      </div>
+      <div class="col-md-2 mb-2">
+        <button type="submit" class="btn btn-primary btn-block">Search</button>
+      </div>
+    </div>
+  </form>
+
+  <p class="text-muted">Showing {{ products|length }} product{{ 's' if products|length != 1 else '' }}.</p>
+
+  {% if products %}
+    <div class="row">
+      {% for product in products %}
+        <div class="col-md-4 mb-4">
+          <div class="card h-100">
+            <img class="card-img-top"
+                 src="{{ product.image_link or 'https://via.placeholder.com/400?text=No+Image' }}"
+                 alt="{{ product.name }}"
+                 style="object-fit: cover; height: 220px;">
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="text-muted mb-1">{{ product.category_name }}</p>
+              <p class="font-weight-bold mb-2">${{ '%.2f'|format(product.price) }}</p>
+              <p class="small text-muted mb-3">{{ product.description }}</p>
+              <a class="btn btn-outline-primary mt-auto" href="{{ url_for('products.detail', product_id=product.id) }}">View details</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No products matched your search.</p>
+  {% endif %}
+</div>
+{% endblock %}

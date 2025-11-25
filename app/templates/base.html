@@ -103,7 +103,9 @@
     </button>
     <div class="collapse navbar-collapse" id="mainNav">
       <ul class="navbar-nav ml-auto align-items-lg-center">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('products.browse') }}">Products</a></li>
         {% if current_user.is_authenticated %}
+  <li class="nav-item"><a class="nav-link" href="{{ url_for('products.new') }}">New Product</a></li>
   <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.cart', user_id=current_user.id) }}">Cart</a></li>
   <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.orders', user_id=current_user.id) }}">Orders</a></li>
   <li class="nav-item"><a class="nav-link" href="{{ url_for('product_seller.seller_inventory', seller_id=current_user.id) }}">Inventory</a></li>

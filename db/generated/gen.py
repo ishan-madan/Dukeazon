@@ -49,12 +49,12 @@ def gen_products(num_products):
             price = round(fake.random_int(min=1, max=500) + fake.random.random(), 2)
             available_bool = fake.random_element(elements=(True, False))
             available_str = 'TRUE' if available_bool else 'FALSE'
-            image_link = f'https://picsum.photos/seed/{pid}/200/200'  # placeholder image link
+            image_link = f'https://picsum.photos/seed/{pid}/200/200'                          
             
             if available_bool:
                 available_pids.append(pid)
             
-            # Write all 5 columns: id, name, price, available, image_link
+                                                                         
             writer.writerow([pid, name, price, available_str, image_link])
         
         print(f'{num_products} generated; {len(available_pids)} available')
@@ -93,16 +93,16 @@ def gen_cart(num_entries, available_pids, num_users):
     return
 
 
-#gen_users(num_users)
-#available_pids = gen_products(num_products)
-#gen_purchases(num_purchases, available_pids)
+                     
+                                            
+                                             
 
-available_pids = list(range(num_products))  # make a simple list of product IDs
+available_pids = list(range(num_products))                                     
 gen_cart(num_entries=1200, available_pids=available_pids, num_users=num_users)
 
 def gen_product_sellers(num_sellers, available_pids, max_listings_per_seller):
     with open('ProductSeller.csv', 'w', newline='') as f:
-        writer = csv.writer(f)  # use default csv.writer, no extra dialect
+        writer = csv.writer(f)                                            
         for seller_id in range(num_sellers):
             num_listings = fake.random_int(min=5, max=max_listings_per_seller)
             listed_products = fake.random_elements(elements=available_pids, length=num_listings, unique=True)
