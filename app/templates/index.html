@@ -9,13 +9,6 @@
     'seven fabergé easter eggs': 'Seven Fabergé Easter Eggs',
     'painting - the storm on the sea of galilee': 'Painting: The Storm on the Sea of Galilee'
   } %}
-{% set seller_label_map = {
-    0: 'Harbor Market Co.',
-    1: 'Midnight Ridge Trading',
-    2: 'Northstar Provisions',
-    3: 'Blue Fox Goods',
-    4: 'Granite Bay Supply'
-  } %}
 
 <ul class="nav nav-tabs" id="homeTabs" role="tablist">
   <li class="nav-item">
@@ -81,7 +74,7 @@
                         {% for listing in listings %}
                         <div class="p-2 border rounded mb-2 d-flex flex-column flex-lg-row align-items-lg-center">
                           <div class="mr-lg-3">
-                            {% set seller_display = seller_label_map.get(listing.seller_id, listing.seller_name) %}
+                            {% set seller_display = listing.seller_name %}
                             <div class="font-weight-bold">{{ seller_display }}</div>
                             <small class="text-muted">Price ${{ '{:,.2f}'.format(listing.price) }} • {{ listing.quantity }} in stock</small>
                           </div>
