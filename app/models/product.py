@@ -42,3 +42,14 @@ LIMIT :k
 ''', k=k)
 
         return [Product(*row) for row in rows]
+
+    @staticmethod
+    def set_available(product_id, available=True):
+        """
+        Update the 'available' flag for a product.
+        """
+        app.db.execute('''
+UPDATE Products
+SET available = :available
+WHERE id = :id
+''', available=available, id=product_id)
