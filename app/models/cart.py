@@ -215,6 +215,19 @@ WHERE id = :listing_id
 """), {"quantity": item["quantity"], "listing_id": item["listing_id"]})
 
                 seller_totals[item["seller_id"]] = seller_totals.get(item["seller_id"], Decimal("0")) + item["subtotal"]
+                # After decrementing listing quantity, if no active listings with
+                # quantity > 0 remain for this product, mark product unavailable.
+                remaining = conn.execute(text("""
+SELECT 1 FROM ProductSeller
+WHERE product_id = :product_id AND is_active = TRUE AND quantity > 0
+LIMIT 1
+"""), {"product_id": item["product_id"]}).fetchone()
+                if not remaining:
+                    conn.execute(text("""
+UPDATE Products
+SET available = FALSE
+WHERE id = :product_id
+"""), {"product_id": item["product_id"]})
 
             conn.execute(text("""
 UPDATE Users
