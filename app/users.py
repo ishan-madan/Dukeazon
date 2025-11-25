@@ -86,3 +86,69 @@ def purchases():
                            title='My Purchases',
                            purchases=purchases,
                            user=current_user)
+
+class UpdateAccountForm(FlaskForm):
+    firstname = StringField('First Name', validators=[DataRequired()])
+    lastname = StringField('Last Name', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    address = StringField('Address', validators=[DataRequired()])
+    submit = SubmitField('Update')
+
+    def validate_email(self, email):
+        # prevent duplicate emails
+        if email.data != current_user.email and User.email_exists(email.data):
+            raise ValidationError('A user with this email already exists.')
+
+class BalanceForm(FlaskForm):
+    amount = StringField('Amount', validators=[DataRequired()])
+    submit_add = SubmitField('Add Funds')
+    submit_withdraw = SubmitField('Withdraw Funds')
+
+@bp.route('/account', methods=['GET', 'POST'])
+@login_required
+def account():
+    update_form = UpdateAccountForm()
+    balance_form = BalanceForm()
+
+    # Pre-fill the user's current info on GET
+    if request.method == 'GET':
+        update_form.firstname.data = current_user.firstname
+        update_form.lastname.data = current_user.lastname
+        update_form.email.data = current_user.email
+        update_form.address.data = current_user.address
+
+    # Handle updating profile information
+    if update_form.submit.data and update_form.validate_on_submit():
+        User.update_account(
+            uid=current_user.id,
+            firstname=update_form.firstname.data,
+            lastname=update_form.lastname.data,
+            email=update_form.email.data,
+            address=update_form.address.data
+        )
+        flash('Your account information has been updated.')
+        return redirect(url_for('users.account'))
+
+    # Handle balance updates
+    if balance_form.validate_on_submit():
+        amount = float(balance_form.amount.data)
+
+        # Add funds
+        if balance_form.submit_add.data:
+            User.add_balance(current_user.id, amount)
+            flash(f'Added ${amount:.2f} to your balance.')
+
+        # Withdraw funds
+        if balance_form.submit_withdraw.data:
+            if amount > current_user.balance:
+                flash('Not enough balance to withdraw.')
+            else:
+                User.withdraw_balance(current_user.id, amount)
+                flash(f'Withdrew ${amount:.2f}.')
+
+        return redirect(url_for('users.account'))
+
+    return render_template('account.html',
+                           update_form=update_form,
+                           balance_form=balance_form,
+                           user=current_user)

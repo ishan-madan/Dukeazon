@@ -6,16 +6,18 @@ from .. import login
 
 
 class User(UserMixin):
-    def __init__(self, id, email, firstname, lastname):
+    def __init__(self, id, email, firstname, lastname, address, balance):
         self.id = id
         self.email = email
         self.firstname = firstname
         self.lastname = lastname
+        self.address = address
+        self.balance = balance
 
     @staticmethod
     def get_by_auth(email, password):
         rows = app.db.execute("""
-SELECT password, id, email, firstname, lastname
+SELECT password, id, email, firstname, lastname, address, balance
 FROM Users
 WHERE email = :email
 """,
@@ -61,9 +63,42 @@ RETURNING id
     @login.user_loader
     def get(id):
         rows = app.db.execute("""
-SELECT id, email, firstname, lastname
+SELECT id, email, firstname, lastname, address, balance
 FROM Users
 WHERE id = :id
 """,
                               id=id)
         return User(*(rows[0])) if rows else None
+
+@staticmethod
+def update_account(uid, firstname, lastname, email, address):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("""
+        UPDATE users
+        SET firstname = %s, lastname = %s, email = %s, address = %s
+        WHERE id = %s
+    """, (firstname, lastname, email, address, uid))
+    db.commit()
+
+@staticmethod
+def add_balance(uid, amount):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("""
+        UPDATE users
+        SET balance = balance + %s
+        WHERE id = %s
+    """, (amount, uid))
+    db.commit()
+
+@staticmethod
+def withdraw_balance(uid, amount):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("""
+        UPDATE users
+        SET balance = balance - %s
+        WHERE id = %s
+    """, (amount, uid))
+    db.commit()

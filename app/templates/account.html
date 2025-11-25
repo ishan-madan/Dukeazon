@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>My Account</h2>
+
+<div class="card p-4 mb-4">
+  <h4>Update Information</h4>
+  <form method="POST">
+    {{ update_form.hidden_tag() }}
+
+    {{ update_form.firstname.label }} {{ update_form.firstname(class="form-control") }}
+    {{ update_form.lastname.label }} {{ update_form.lastname(class="form-control") }}
+    {{ update_form.email.label }} {{ update_form.email(class="form-control") }}
+    {{ update_form.address.label }} {{ update_form.address(class="form-control") }}
+
+    <br>
+    {{ update_form.submit(class="btn btn-primary") }}
+  </form>
+</div>
+
+<div class="card p-4">
+  <h4>Balance: ${{ user.balance }}</h4>
+
+  <form method="POST">
+    {{ balance_form.hidden_tag() }}
+
+    {{ balance_form.amount.label }} {{ balance_form.amount(class="form-control") }}
+
+    <br>
+    {{ balance_form.submit_add(class="btn btn-success") }}
+    {{ balance_form.submit_withdraw(class="btn btn-danger") }}
+  </form>
+</div>
+
+{% endblock %}
