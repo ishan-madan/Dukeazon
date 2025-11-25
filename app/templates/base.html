@@ -129,9 +129,55 @@
     </div>
   </nav>
 
+  {# Toast container: overlays content in top-right and auto-dismisses messages #}
+  <div id="toast-container" aria-live="polite" aria-atomic="true"
+       style="position: fixed; top: 1rem; right: 1rem; z-index: 2050;">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          {% set cls = 'info' %}
+          {% if category == 'success' %}
+            {% set cls = 'success' %}
+          {% elif category == 'warning' %}
+            {% set cls = 'warning' %}
+          {% elif category == 'error' or category == 'danger' %}
+            {% set cls = 'danger' %}
+          {% endif %}
+          <div class="toast-message alert alert-{{ cls }} alert-dismissible" role="alert"
+               style="display:none; min-width:260px; margin-bottom:0.6rem; box-shadow:0 6px 18px rgba(7,19,48,0.12);">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="mr-2">{{ message }}</div>
+              <button type="button" class="close ml-2" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
+
   <div class="content-wrapper">
     {% block content %}{% endblock %}
   </div>
+
+  <script>
+    // Show flashed messages as toasts: fade in, then auto-dismiss after 4s.
+    (function() {
+      $(function() {
+        const $toasts = $('#toast-container .toast-message');
+        $toasts.each(function(i) {
+          const $t = $(this);
+          // stagger appearance
+          setTimeout(function() { $t.fadeIn(200); }, i * 150);
+          // auto-hide after 4s + stagger
+          const hideDelay = 4000 + i * 150;
+          const hide = function() { $t.fadeOut(300, function() { $(this).remove(); }); };
+          setTimeout(hide, hideDelay);
+          // manual close
+          $t.find('.close').on('click', hide);
+        });
+      });
+    })();
+  </script>
 </body>
 
 </html>
