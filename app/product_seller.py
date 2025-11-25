@@ -10,7 +10,7 @@ def seller_inventory(seller_id):
     # existing inventory data
     inventory = ProductSeller.get_inventory_by_sid(seller_id)
 
-    # seller basic info (optional, but nice)
+    # seller basic info 
     seller_rows = app.db.execute("""
         SELECT id, firstname, lastname
         FROM Users
