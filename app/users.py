@@ -133,7 +133,14 @@ def account():
 
                             
     if balance_form.validate_on_submit():
-        amount = float(balance_form.amount.data)
+        try:
+            amount = float(balance_form.amount.data)
+        except ValueError:
+            flash('Please enter a numeric amount.', 'danger')
+            return redirect(url_for('users.account'))
+        if amount <= 0:
+            flash('Amount must be positive.', 'danger')
+            return redirect(url_for('users.account'))
 
                    
         if balance_form.submit_add.data:

@@ -108,6 +108,23 @@ To change the database schema, modify `db/create.sql` and
 `db/load.sql` as needed.  Make sure you run `db/setup.sh` to reflect
 the changes.
 
+### Upgrading databases created before MS4
+
+If you created your `amazon` database before pulling the MS4 feature
+branches, you will run into errors such as `column "category_id" does
+not exist` or missing address/balance fields on the `Users` table.
+Either re-run `db/setup.sh` to recreate the database from scratch or
+apply the migration script that upgrades the in-place database:
+
+```
+psql $DB_NAME -f db/migrations/ms4_schema_upgrade.sql
+```
+
+The migration is idempotent and primarily adds the new tables/columns
+required by checkout and the richer product catalog.  It will drop and
+recreate the legacy `Cart` table schema, so expect any existing cart
+items to be cleared.
+
 Under `db/data/`, you will find CSV files that `db/load.sql` uses to
 initialize the database contents when you run `db/setup.sh`.  Under
 `db/generated/`, you will find alternate CSV files that will be used

@@ -10,7 +10,7 @@
     </div>
   </div>
   <p class="text-muted mb-4">
-    Placed {{ order.created_at }} •
+    Placed {{ order.created_at | friendly_datetime }} •
     <span class="badge badge-{{ 'success' if is_fulfilled else 'warning' }}">{{ display_status|capitalize }}</span>
   </p>
 

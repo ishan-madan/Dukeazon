@@ -6,6 +6,7 @@
   <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
   <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
   <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/aptos">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/example.css') }}">
   <style>
     :root {
@@ -15,7 +16,7 @@
       --dark-blue: #071330;
     }
     body {
-      font-family: "Lato", sans-serif;
+      font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
       background-color: var(--misty-blue);
       color: var(--dark-blue);
     }
@@ -93,7 +94,7 @@
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
     <a class="navbar-brand font-weight-bold text-white d-flex align-items-center" href="{{ url_for('index.index') }}">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1f/Duke_University_Seal.svg"
+      <img src="{{ url_for('static', filename='img/duke-shield.svg') }}"
            alt="Duke crest" class="navbar-brand-logo">
       <span>Dukeazon</span>
     </a>

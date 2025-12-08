@@ -25,7 +25,7 @@
       <div class="card-header d-flex justify-content-between align-items-center">
         <div>
           <strong>Order #{{ order.order_id }}</strong>
-          <div class="small text-muted">Placed: {{ order.order_created_at }}</div>
+          <div class="small text-muted">Placed: {{ order.order_created_at | friendly_datetime }}</div>
         </div>
         <div class="text-right">
           <div><strong>Total:</strong> ${{ '{:,.2f}'.format(order.order_total) }}</div>
