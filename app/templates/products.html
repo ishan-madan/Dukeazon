@@ -5,7 +5,7 @@
   <h2>Browse Products</h2>
   <form class="mb-4" method="get" action="{{ url_for('products.browse') }}">
     <div class="form-row">
-      <div class="col-md-4 mb-2">
+      <div class="col-md-3 mb-2">
         <select class="form-control" name="category">
           <option value="">All categories</option>
           {% for category in categories %}
@@ -15,7 +15,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-4 mb-2">
+      <div class="col-md-3 mb-2">
         <input type="text"
                class="form-control"
                name="q"
@@ -27,6 +27,16 @@
           <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
           <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
         </select>
+      </div>
+      <div class="col-md-2 mb-2">
+        <input type="number"
+               min="0"
+               max="5"
+               step="0.5"
+               class="form-control"
+               name="rating_threshold"
+               placeholder="Trusted ≥"
+               value="{{ rating_threshold if rating_threshold is not none else '' }}">
       </div>
       <div class="col-md-2 mb-2">
         <button type="submit" class="btn btn-primary btn-block">Search</button>
@@ -48,6 +58,11 @@
             <div class="card-body d-flex flex-column">
               <h5 class="card-title">{{ product.name }}</h5>
               <p class="text-muted mb-1">{{ product.category_name }}</p>
+              {% if product.best_seller_rating is not none and rating_threshold is not none and product.best_seller_rating >= rating_threshold %}
+                <span class="badge badge-success mb-2">Trusted Seller {{ '%.1f'|format(product.best_seller_rating) }}/5</span>
+              {% elif product.best_seller_rating is not none %}
+                <span class="badge badge-light mb-2">Top Seller {{ '%.1f'|format(product.best_seller_rating) }}/5</span>
+              {% endif %}
               <p class="font-weight-bold mb-2">${{ '%.2f'|format(product.price) }}</p>
               <p class="small text-muted mb-3">{{ product.description }}</p>
               <a class="btn btn-outline-primary mt-auto" href="{{ url_for('products.detail', product_id=product.id) }}">View details</a>
