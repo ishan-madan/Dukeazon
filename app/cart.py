@@ -28,11 +28,13 @@ def cart(user_id):
 
     items = Cart.get_by_user(user_id)
     total_price = sum((item.subtotal for item in items), Decimal("0"))
+    saved_items = Cart.get_saved_by_user(user_id)
 
     return render_template('cart.html',
                            title='My Cart',
                            user_id=user_id,
                            items=items,
+                           saved_items=saved_items,
                            total=total_price)
 
 
@@ -108,6 +110,41 @@ def remove_item(user_id, listing_id):
     flash("Removed item from cart.")
     if request.is_json:
         return jsonify({"ok": True}), 200
+    return redirect(url_for('cart.cart', user_id=user_id))
+
+
+@bp.route('/<int:user_id>/save/<int:listing_id>', methods=['POST'])
+@login_required
+def save_for_later(user_id, listing_id):
+    _ensure_owner(user_id)
+    try:
+        Cart.save_for_later(user_id, listing_id)
+    except ValueError as exc:
+        flash(str(exc), 'danger')
+    else:
+        flash('Item saved for later.', 'info')
+    return redirect(url_for('cart.cart', user_id=user_id))
+
+
+@bp.route('/<int:user_id>/saved/<int:listing_id>/move', methods=['POST'])
+@login_required
+def move_saved_to_cart(user_id, listing_id):
+    _ensure_owner(user_id)
+    try:
+        Cart.move_saved_to_cart(user_id, listing_id)
+    except ValueError as exc:
+        flash(str(exc), 'danger')
+    else:
+        flash('Moved back to your cart.', 'success')
+    return redirect(url_for('cart.cart', user_id=user_id))
+
+
+@bp.route('/<int:user_id>/saved/<int:listing_id>/remove', methods=['POST'])
+@login_required
+def remove_saved_item(user_id, listing_id):
+    _ensure_owner(user_id)
+    Cart.remove_saved_item(user_id, listing_id)
+    flash('Removed saved item.', 'info')
     return redirect(url_for('cart.cart', user_id=user_id))
 
 
