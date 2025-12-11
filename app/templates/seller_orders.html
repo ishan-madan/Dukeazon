@@ -21,6 +21,16 @@
 
   {% if orders %}
     {% for order in orders %}
+    {% set status_ns = namespace(value='Order Placed') %}
+    {% for itm in order.items %}
+      {% set computed = itm.fulfillment_status if itm.fulfillment_status is defined else ('Delivered' if itm.fulfilled else 'Order Placed') %}
+      {% if computed == 'Delivered' %}
+        {% set status_ns.value = 'Delivered' %}
+      {% elif computed == 'Shipped' and status_ns.value != 'Delivered' %}
+        {% set status_ns.value = 'Shipped' %}
+      {% endif %}
+    {% endfor %}
+    {% set header_status = status_ns.value %}
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <div>
@@ -28,9 +38,17 @@
           <div class="small text-muted">Placed: {{ order.order_created_at | friendly_datetime }}</div>
         </div>
         <div class="text-right">
-          <div><strong>Total:</strong> ${{ '{:,.2f}'.format(order.order_total) }}</div>
-          <div class="small text-muted">Items in order: {{ order.order_total_items }}</div>
-          <div class="mt-1"><span class="badge badge-info">{{ order.order_status }}</span></div>
+          <div class="mb-1"><strong>Total:</strong> ${{ '{:,.2f}'.format(order.order_total) }}</div>
+          <div class="small text-muted mb-2">Items in order: {{ order.order_total_items }}</div>
+          <div>
+            {% if header_status == 'Delivered' %}
+              <span class="badge badge-success text-uppercase">Delivered</span>
+            {% elif header_status == 'Shipped' %}
+              <span class="badge badge-primary text-uppercase">Shipped</span>
+            {% else %}
+              <span class="badge badge-warning text-uppercase">Order Placed</span>
+            {% endif %}
+          </div>
         </div>
       </div>
       <div class="card-body">

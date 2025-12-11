@@ -197,22 +197,27 @@ def account():
         update_form.zip_code.data = address_parts['zip_code']
 
                                          
-    if update_form.submit.data and update_form.validate_on_submit():
-        formatted_address = format_full_address(
-            update_form.street.data,
-            update_form.city.data,
-            update_form.state.data,
-            update_form.zip_code.data
-        )
-        User.update_account(
-            uid=current_user.id,
-            firstname=update_form.firstname.data,
-            lastname=update_form.lastname.data,
-            email=update_form.email.data,
-            address=formatted_address
-        )
-        current_user.address = formatted_address
-        flash('Your account information has been updated.')
+    if update_form.submit.data:
+        if update_form.validate_on_submit():
+            formatted_address = format_full_address(
+                update_form.street.data,
+                update_form.city.data,
+                update_form.state.data,
+                update_form.zip_code.data
+            )
+            User.update_account(
+                uid=current_user.id,
+                firstname=update_form.firstname.data,
+                lastname=update_form.lastname.data,
+                email=update_form.email.data,
+                address=formatted_address
+            )
+            current_user.address = formatted_address
+            flash('Your account information has been updated.')
+        else:
+            for field_errors in update_form.errors.values():
+                for err in field_errors:
+                    flash(err, 'danger')
         return redirect(url_for('users.account'))
 
                             
