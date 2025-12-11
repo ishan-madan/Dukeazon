@@ -32,4 +32,41 @@
   </form>
 </div>
 
+<div class="card p-4 mt-4">
+  <h4>Active Subscriptions</h4>
+  {% set freq_labels = {'weekly': 'Every Week', 'monthly': 'Every Month', 'quarterly': 'Every 3 Months'} %}
+  {% if subscriptions %}
+    <div class="table-responsive mt-3">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Category</th>
+            <th>Frequency</th>
+            <th>Started</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in subscriptions %}
+            <tr>
+              <td>{{ sub.product_name }}</td>
+              <td>{{ sub.category_name }}</td>
+              <td>{{ freq_labels.get(sub.frequency, sub.frequency|title) }}</td>
+              <td>{{ sub.created_at|friendly_datetime }}</td>
+              <td class="text-right">
+                <form method="post" action="{{ url_for('users.cancel_subscription', subscription_id=sub.id) }}">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="mb-0 text-muted mt-2">No active subscriptions yet. Visit a Frozen Treat to subscribe.</p>
+  {% endif %}
+</div>
+
 {% endblock %}

@@ -5,6 +5,7 @@ from .models.category import Category
 from .models.product import Product
 from .models.product_review import ProductReview
 from .models.product_seller import ProductSeller
+from .models.subscription import Subscription
 
 bp = Blueprint('products', __name__, url_prefix='/products')
 
@@ -40,11 +41,23 @@ def detail(product_id):
     sellers = ProductSeller.get_active_by_product(product_id)
     reviews = ProductReview.get_for_product(product_id)
     suggestions = Product.similar(product, limit=4)
+    allow_subscription = bool(product.category_name and product.category_name.lower().startswith('frozen treat'))
+    existing_subscription = None
+    if allow_subscription and current_user.is_authenticated:
+        existing_subscription = Subscription.get_active_for_user_product(current_user.id, product_id)
+    frequency_options = [
+        ('weekly', 'Every Week'),
+        ('monthly', 'Every Month'),
+        ('quarterly', 'Every 3 Months')
+    ]
     return render_template('product_detail.html',
                            product=product,
                            sellers=sellers,
                            reviews=reviews,
-                           suggestions=suggestions)
+                           suggestions=suggestions,
+                           allow_subscription=allow_subscription,
+                           subscription=existing_subscription,
+                           subscription_options=frequency_options)
 
 
 @bp.route('/new', methods=['GET', 'POST'])
@@ -111,3 +124,24 @@ def edit(product_id):
                            mode='edit',
                            categories=categories,
                            product=product)
+
+
+@bp.route('/<int:product_id>/subscribe', methods=['POST'])
+@login_required
+def subscribe(product_id):
+    product = Product.get(product_id)
+    if not product:
+        abort(404)
+    if not product.category_name or not product.category_name.lower().startswith('frozen treat'):
+        flash('Subscriptions are only available for Frozen Treats.', 'warning')
+        return redirect(url_for('products.detail', product_id=product_id))
+
+    frequency = request.form.get('frequency')
+    allowed = {'weekly', 'monthly', 'quarterly'}
+    if frequency not in allowed:
+        flash('Please choose a delivery frequency.', 'danger')
+        return redirect(url_for('products.detail', product_id=product_id))
+
+    Subscription.create_or_update(current_user.id, product_id, frequency)
+    flash('Subscription saved! Manage it anytime from your account.', 'success')
+    return redirect(url_for('products.detail', product_id=product_id))
