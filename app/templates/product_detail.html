@@ -94,7 +94,14 @@
       <tbody>
         {% for seller in sellers %}
           <tr>
-            <td>{{ seller.seller_name if seller.seller_name else ('Seller #' ~ seller.seller_id) }}</td>
+            {% set seller_display = seller.seller_name if seller.seller_name else ('Seller #' ~ seller.seller_id) %}
+            <td>
+              <a href="{{ url_for('users.public_profile', user_id=seller.seller_id) }}"
+                 class="profile-popup-link"
+                 data-profile-title="{{ seller_display }}">
+                {{ seller_display }}
+              </a>
+            </td>
             <td>${{ '%.2f'|format(seller.price) }}</td>
             <td>{{ seller.quantity }}</td>
             <td>
@@ -267,7 +274,7 @@
               {% endif %}
             </div>
             <small class="text-muted">
-              {{ review.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if review.created_at else '—' }}
+              {{ review.created_at.astimezone(eastern).strftime('%I:%M %p, %m/%d/%Y') if review.created_at else '—' }}
             </small>
           </div>
           <p class="mb-1">{{ review.body }}</p>

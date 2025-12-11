@@ -214,12 +214,11 @@ FROM OrderItems oi
 JOIN Orders o ON oi.order_id = o.id
 JOIN Products p ON oi.product_id = p.id
 WHERE oi.seller_id = :seller_id
-  AND o.created_at >= :cutoff
   AND oi.fulfilled = TRUE
 GROUP BY oi.product_id, p.name
 ORDER BY units_sold DESC
 LIMIT :limit
-''', seller_id=seller_id, cutoff=cutoff, limit=limit)
+''', seller_id=seller_id, limit=limit)
 
         top_products = []
         for r in top_rows:

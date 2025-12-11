@@ -2,7 +2,9 @@ from flask import current_app as app
 
 
 class Product:
-    def __init__(self, id, category_id, category_name, name, description, price, available, image_link, creator_id=None, best_seller_rating=None, listing_price=None):
+    def __init__(self, id, category_id, category_name, name, description, price, available, image_link,
+                 creator_id=None, avg_product_rating=None, product_review_count=None,
+                 best_seller_rating=None, best_seller_review_count=None, listing_price=None):
         self.id = id
         self.category_id = category_id
         self.category_name = category_name
@@ -14,8 +16,12 @@ class Product:
         self.available = available
         self.image_link = image_link
         self.creator_id = creator_id
-        # highest average seller rating among active sellers for this product; None if no data
+        # cached overall product rating + volume from product_reviews
+        self.avg_product_rating = avg_product_rating
+        self.product_review_count = product_review_count or 0
+        # best seller rating summary derived from seller_reviews (respecting minimum review counts)
         self.best_seller_rating = best_seller_rating
+        self.best_seller_review_count = best_seller_review_count or 0
 
     @staticmethod
     def get(id):
@@ -99,12 +105,17 @@ ORDER BY p.id
 
         having_clause = ''
         if rating_threshold is not None:
-            having_clause = 'HAVING COALESCE(MAX(sr.avg_rating), 0) >= :rating_threshold'
+            having_clause = 'HAVING COALESCE(pr.avg_rating, 0) >= :rating_threshold'
             params['rating_threshold'] = rating_threshold
 
         rows = app.db.execute(
             f'''
-WITH seller_ratings AS (
+WITH product_ratings AS (
+    SELECT product_id, AVG(rating)::float AS avg_rating, COUNT(*) AS review_count
+    FROM product_reviews
+    GROUP BY product_id
+),
+seller_ratings AS (
     SELECT seller_id, AVG(rating)::float AS avg_rating, COUNT(*) AS review_count
     FROM seller_reviews
     GROUP BY seller_id
@@ -119,22 +130,32 @@ SELECT
     p.available,
     p.image_link,
     p.creator_id,
+    pr.avg_rating AS avg_product_rating,
+    COALESCE(pr.review_count, 0) AS product_review_count,
     MAX(CASE WHEN sr.review_count >= 3 THEN sr.avg_rating END) AS best_seller_rating,
+    MAX(CASE WHEN sr.review_count >= 3 THEN sr.review_count END) AS best_seller_review_count,
     COALESCE(MIN(ps.price), p.price) AS listing_price
 FROM Products p
 LEFT JOIN ProductSeller ps
   ON ps.product_id = p.id
  AND ps.is_active = TRUE
  AND ps.quantity > 0
+LEFT JOIN product_ratings pr
+  ON pr.product_id = p.id
 LEFT JOIN seller_ratings sr
   ON sr.seller_id = ps.seller_id
 WHERE {where_clause}
-GROUP BY p.id, p.category_id, p.category_name, p.name, p.description, p.price, p.available, p.image_link, p.creator_id
+GROUP BY p.id, p.category_id, p.category_name, p.name, p.description, p.price, p.available, p.image_link, p.creator_id, pr.avg_rating, pr.review_count
 {having_clause}
 ORDER BY {sort_clause}, p.id
 ''',
             **params)
-        return [Product(*row[:-1], listing_price=row[-1]) for row in rows]
+        result = []
+        for row in rows:
+            # unpack values: listing price is last column
+            *base_fields, listing_price = row
+            result.append(Product(*base_fields, listing_price=listing_price))
+        return result
 
     @staticmethod
     def create(category_id, category_name, name, description, price, available, image_link, creator_id):

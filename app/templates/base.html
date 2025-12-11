@@ -500,6 +500,23 @@
     {% block content %}{% endblock %}
   </div>
 
+  <!-- Shared profile modal -->
+  <div class="modal fade" id="profileModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="profileModalTitle">Profile</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body p-0">
+          <iframe id="profileModalFrame" src="" style="width:100%;height:70vh;border:0;" title="Profile preview"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Show flashed messages as toasts: fade in, then auto-dismiss after 10s.
     (function() {
@@ -519,6 +536,25 @@
         });
       });
     })();
+
+    $(function() {
+      $('body').on('click', '.profile-popup-link', function(evt) {
+        evt.preventDefault();
+        const $link = $(this);
+        const target = $link.attr('href');
+        if (!target) {
+          return;
+        }
+        const title = $link.data('profileTitle') || $link.text().trim() || 'Profile';
+        $('#profileModalTitle').text(title);
+        $('#profileModalFrame').attr('src', target);
+        $('#profileModal').modal('show');
+      });
+
+      $('#profileModal').on('hidden.bs.modal', function() {
+        $('#profileModalFrame').attr('src', '');
+      });
+    });
   </script>
 </body>
 

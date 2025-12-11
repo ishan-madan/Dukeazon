@@ -296,9 +296,10 @@ def order_detail(user_id, order_id):
 def seller_orders_view(seller_id):
     _ensure_owner(seller_id)
     q = request.args.get('q')
+    status_filter = request.args.get('status')
     items = Order.list_items_for_seller(seller_id, q=q)
 
-                                                                                            
+
     orders = []
     order_map = {}
     for it in items:
@@ -319,11 +320,36 @@ def seller_orders_view(seller_id):
             order_map[oid] = order_obj
         order_map[oid].items.append(it)
 
+    def _overall_status(order_items):
+        priority = {
+            'Order Placed': 0,
+            'Shipped': 1,
+            'Delivered': 2
+        }
+        lowest = 2  # start at highest priority value (Delivered)
+        chosen = 'Delivered'
+        for itm in order_items:
+            computed = itm.get('fulfillment_status') or ('Delivered' if itm.get('fulfilled') else 'Order Placed')
+            rank = priority.get(computed, 0)
+            if rank < lowest:
+                lowest = rank
+                chosen = computed
+            if lowest == 0:
+                break
+        return chosen
+
+    for order in orders:
+        order.display_status = _overall_status(order.items)
+
+    if status_filter:
+        orders = [order for order in orders if order.display_status == status_filter]
+
     return render_template('seller_orders.html',
                            title='Orders to Fulfill',
                            seller_id=seller_id,
                            orders=orders,
-                           q=q)
+                           q=q,
+                           status=status_filter)
 
 
 @bp.route('/seller/<int:seller_id>/fulfillment/<int:item_id>', methods=['POST'])
@@ -350,4 +376,9 @@ def update_item_status(seller_id, item_id):
         flash(str(exc), 'danger')
     else:
         flash(f"Updated status to '{status}'.", 'success')
-    return redirect(url_for('cart.seller_orders_view', seller_id=seller_id))
+    q = request.form.get('q')
+    status_filter = request.form.get('current_status')
+    return redirect(url_for('cart.seller_orders_view',
+                            seller_id=seller_id,
+                            q=q,
+                            status=status_filter))

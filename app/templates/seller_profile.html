@@ -10,7 +10,7 @@
     <h1 class="mb-1">{{ user.firstname }} {{ user.lastname }}</h1>
     <p class="muted mb-0">Account #{{ user.id }}</p>
     <p class="muted mb-0">Member since {{
-          user.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y')
+          user.created_at.astimezone(eastern).strftime('%I:%M %p, %m/%d/%Y')
           if user.created_at else ('User #' ~ user.id)
         }}</p>
   </div>
@@ -46,7 +46,7 @@
                 <div class="d-flex justify-content-between">
                   <strong>{{ review.firstname }} {{ review.lastname }}</strong>
                   <small class="text-muted">
-                    {{ review.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if review.created_at else '—' }}
+                    {{ review.created_at.astimezone(eastern).strftime('%I:%M %p, %m/%d/%Y') if review.created_at else '—' }}
                   </small>
                 </div>
                 <div class="text-warning mb-1">

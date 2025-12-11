@@ -29,19 +29,30 @@ def create_app():
 
     @app.template_filter('friendly_datetime')
     def friendly_datetime(value):
+        """
+        Converts a datetime to Eastern timezone and formats as:
+        'December 11th, 2025 at 9:34 AM'
+        """
         if not value:
             return ''
+        
         dt = value
         try:
+            # If datetime is naive, assume UTC
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
-            dt = dt.astimezone()
+            # Convert to Eastern time
+            dt = dt.astimezone(app.jinja_env.globals['eastern'])
         except Exception:
             pass
-        month = dt.strftime('%B')
-        day = _ordinal(dt.day)
+
+        month = dt.strftime('%B')        # Full month name
+        day = _ordinal(dt.day)           # Day with ordinal suffix
+        year = dt.strftime('%Y')         # Full year
+        # 12-hour time, remove leading zero if present
         time_part = dt.strftime('%I:%M %p').lstrip('0') or dt.strftime('%I:%M %p')
-        return f"{month} {day}, at {time_part}"
+
+        return f"{month} {day}, {year} at {time_part}"
 
     from .index import bp as index_bp
     app.register_blueprint(index_bp)

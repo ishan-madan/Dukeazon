@@ -149,13 +149,20 @@
                     <p class="product-description">
                       {{ (product.description or 'Explore details on the product page.')|truncate(90, True, '...') }}
                     </p>
-                    {% if product.best_seller_rating is not none %}
-                      {% if rating_threshold is not none and product.best_seller_rating >= rating_threshold %}
-                        <span class="badge badge-success mb-2">Trusted Seller</span>
-                      {% else %}
-                        <span class="badge badge-light mb-2">Top Seller</span>
+                    {% set show_top_rated = (product.avg_product_rating is not none
+                                             and product.product_review_count >= 5
+                                             and product.avg_product_rating >= 4.5) %}
+                    {% set show_trusted_seller = (product.best_seller_rating is not none
+                                                 and product.best_seller_review_count >= 3
+                                                 and product.best_seller_rating >= 4.0) %}
+                    <div class="d-flex flex-wrap align-items-center mb-2" style="gap:0.35rem;">
+                      {% if show_top_rated %}
+                        <span class="badge badge-success">Top Rated</span>
                       {% endif %}
-                    {% endif %}
+                      {% if show_trusted_seller %}
+                        <span class="badge badge-primary">Trusted Seller</span>
+                      {% endif %}
+                    </div>
                     <div class="product-rating">
                       {% if summary %}
                         {% set num = summary.get('count', 0) %}
@@ -188,7 +195,12 @@
                     <div class="product-actions">
                       {% if listings %}
                         <div class="seller-chip">
-                          <span class="font-weight-bold">{{ highlight.seller_name }}</span>
+                          {% set highlight_name = highlight.seller_name or ('Seller #' ~ highlight.seller_id) %}
+                          <a href="{{ url_for('users.public_profile', user_id=highlight.seller_id) }}"
+                             class="font-weight-bold profile-popup-link"
+                             data-profile-title="{{ highlight_name }}">
+                            {{ highlight_name }}
+                          </a>
                           <span class="d-block text-muted" style="font-size:0.78rem;">
                             from ${{ '{:,.2f}'.format(highlight.price) }}
                           </span>

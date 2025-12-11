@@ -12,7 +12,16 @@
       <div class="form-group mr-2">
         <input type="text" name="q" value="{{ q or '' }}" class="form-control" placeholder="Search by order # or buyer">
       </div>
-      <button class="btn btn-primary" type="submit">Search</button>
+      <div class="form-group mr-2">
+        <select name="status" class="form-control" onchange="this.form.submit()">
+          <option value="">All Statuses</option>
+          {% for option in ['Order Placed', 'Shipped', 'Delivered'] %}
+            <option value="{{ option }}" {% if status == option %}selected{% endif %}>
+              {{ option }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
     </form>
     <div>
       <a href="{{ url_for('cart.seller_orders_view', seller_id=seller_id) }}" class="btn btn-outline-secondary">Clear</a>
@@ -21,16 +30,7 @@
 
   {% if orders %}
     {% for order in orders %}
-    {% set status_ns = namespace(value='Order Placed') %}
-    {% for itm in order.items %}
-      {% set computed = itm.fulfillment_status if itm.fulfillment_status is defined else ('Delivered' if itm.fulfilled else 'Order Placed') %}
-      {% if computed == 'Delivered' %}
-        {% set status_ns.value = 'Delivered' %}
-      {% elif computed == 'Shipped' and status_ns.value != 'Delivered' %}
-        {% set status_ns.value = 'Shipped' %}
-      {% endif %}
-    {% endfor %}
-    {% set header_status = status_ns.value %}
+    {% set header_status = order.display_status if order.display_status else 'Order Placed' %}
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <div>
@@ -53,7 +53,12 @@
       </div>
       <div class="card-body">
         <div class="mb-3">
-          <strong>Buyer:</strong> {{ order.buyer_name }}<br/>
+          <strong>Buyer:</strong>
+          <a href="{{ url_for('users.public_profile', user_id=order.buyer_id) }}"
+             class="profile-popup-link"
+             data-profile-title="{{ order.buyer_name }}">
+            {{ order.buyer_name }}
+          </a><br/>
           <strong>Address:</strong> {{ order.buyer_address }}
         </div>
 
@@ -85,17 +90,19 @@
                       <span class="badge" style="background-color:#6A0DAD;color:#fff;">Order Placed</span>
                     {% endif %}
                     {% if item.fulfilled_at %}
-                      <div class="small text-muted">{{ item.fulfilled_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') }}</div>
+                      <div class="small text-muted">{{ item.fulfilled_at.astimezone(eastern).strftime('%I:%M %p, %m/%d/%Y') }}</div>
                     {% endif %}
                   </div>
                 </td>
                 <td>
                   <form method="post" action="{{ url_for('cart.update_item_status', seller_id=seller_id, item_id=item.item_id) }}">
+                    <input type="hidden" name="q" value="{{ q or '' }}">
+                    <input type="hidden" name="current_status" value="{{ status or '' }}">
                     <div class="input-group input-group-sm">
                       <select name="status" class="form-control form-control-sm">
-                        <option value="Order Placed" {% if status == 'Order Placed' %}selected{% endif %}>Order Placed</option>
-                        <option value="Shipped" {% if status == 'Shipped' %}selected{% endif %}>Shipped</option>
-                        <option value="Delivered" {% if status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                        <option value="Order Placed" {% if item.fulfillment_status == 'Order Placed' %}selected{% endif %}>Order Placed</option>
+                        <option value="Shipped" {% if item.fulfillment_status == 'Shipped' %}selected{% endif %}>Shipped</option>
+                        <option value="Delivered" {% if item.fulfillment_status == 'Delivered' %}selected{% endif %}>Delivered</option>
                       </select>
                       <div class="input-group-append">
                         <button class="btn btn-primary" type="submit">Save</button>
