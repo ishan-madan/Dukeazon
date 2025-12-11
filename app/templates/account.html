@@ -59,7 +59,7 @@
     <div>
       <div class="eyebrow mb-2">Account Overview</div>
       <h1 class="mb-1">{{ user.firstname }} {{ user.lastname }}</h1>
-      <p class="muted mb-0">{{ user.email }} • {{ user.address }}</p>
+      <p class="muted mb-0">{{ user.email }} • {{ address_display or 'Address on file unavailable' }}</p>
     </div>
     <div class="text-right">
       <span class="role-pill {{ role_class }}">{{ role_label }}</span>
@@ -87,8 +87,22 @@
               {{ update_form.email(class="form-control") }}
             </div>
             <div class="form-group">
-              {{ update_form.address.label }}
-              {{ update_form.address(class="form-control") }}
+              {{ update_form.street.label }}
+              {{ update_form.street(class="form-control") }}
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                {{ update_form.city.label }}
+                {{ update_form.city(class="form-control") }}
+              </div>
+              <div class="form-group col-md-3">
+                {{ update_form.state.label }}
+                {{ update_form.state(class="form-control text-uppercase", maxlength="2") }}
+              </div>
+              <div class="form-group col-md-3">
+                {{ update_form.zip_code.label }}
+                {{ update_form.zip_code(class="form-control") }}
+              </div>
             </div>
             {{ update_form.submit(class="btn btn-theme-primary btn-block") }}
           </form>
@@ -106,7 +120,7 @@
               {{ balance_form.amount.label }}
               {{ balance_form.amount(class="form-control", placeholder="0.00") }}
             </div>
-            <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex flex-wrap">
               {{ balance_form.submit_add(class="btn btn-theme-primary mr-2 mb-2") }}
               {{ balance_form.submit_withdraw(class="btn btn-outline-secondary mb-2") }}
             </div>

@@ -112,6 +112,9 @@
     border-color: #0f2e4d;
     box-shadow: 0 0 0 3px rgba(15, 46, 77, 0.1);
   }
+  .uppercase-input {
+    text-transform: uppercase;
+  }
 
   label {
     display: block;
@@ -183,9 +186,33 @@
       </div>
 
       <div class="form-group">
-        {{ form.address.label }}
-        {{ form.address(size=64) }}
-        {% for error in form.address.errors %}
+        {{ form.street.label }}
+        {{ form.street(size=64) }}
+        {% for error in form.street.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.city.label }}
+        {{ form.city(size=32) }}
+        {% for error in form.city.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.state.label }}
+        {{ form.state(size=8, maxlength=2, class_='uppercase-input') }}
+        {% for error in form.state.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.zip_code.label }}
+        {{ form.zip_code(size=12) }}
+        {% for error in form.zip_code.errors %}
           <span class="error">[{{ error }}]</span>
         {% endfor %}
       </div>
