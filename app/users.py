@@ -224,6 +224,9 @@ def account():
             flash('Amount must be positive.', 'danger')
             return redirect(url_for('users.account'))
 
+            if balance_form.submit_add.data and amount > 10000:
+                flash('You can only add up to $10,000 at a time.', 'danger')
+                return redirect(url_for('users.account'))
                    
         if balance_form.submit_add.data:
             User.add_balance(current_user.id, amount)
