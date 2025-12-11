@@ -17,13 +17,36 @@ class ProductReview:
         self.helpful_rank = helpful_rank
 
     @staticmethod
-    def get_for_product(product_id, user_id=None):
+    def get_for_product(product_id, user_id=None, per_page=None, page=1, min_rating=None, sort='helpful'):
         """
         Fetch reviews for a product, including helpful-vote counts and whether
         the given user has marked each review as helpful.
         """
         uid = user_id or 0
-        rows = app.db.execute('''
+        limit_clause = ""
+        where_clauses = ["pr.product_id = :product_id"]
+        order_clause = """
+ORDER BY CASE WHEN helpful_rank <= 3 THEN 0 ELSE 1 END,
+         helpful_rank,
+         created_at DESC
+"""
+        params = {"product_id": product_id, "uid": uid}
+
+        if min_rating is not None:
+            where_clauses.append("pr.rating >= :min_rating")
+            params["min_rating"] = min_rating
+
+        sort = (sort or 'helpful').lower()
+        if sort == 'recent':
+            order_clause = "ORDER BY created_at DESC"
+
+        if per_page:
+            safe_page = max(1, int(page or 1))
+            params["limit"] = int(per_page)
+            params["offset"] = (safe_page - 1) * int(per_page)
+            limit_clause = "LIMIT :limit OFFSET :offset"
+        where_clause_str = " AND ".join(where_clauses)
+        query = f'''
 WITH aggregated AS (
     SELECT pr.product_review_id,
            pr.product_id,
@@ -40,7 +63,7 @@ WITH aggregated AS (
     LEFT JOIN review_votes rv
            ON rv.review_type = 'product'
           AND rv.review_id = pr.product_review_id
-    WHERE pr.product_id = :product_id
+    WHERE {where_clause_str}
     GROUP BY pr.product_review_id, u.firstname, u.lastname
 ),
 ranked AS (
@@ -60,9 +83,10 @@ SELECT product_review_id,
        COALESCE(user_voted, 0) AS user_voted,
        helpful_rank
 FROM ranked
-ORDER BY CASE WHEN helpful_rank <= 3 THEN 0 ELSE 1 END,
-         helpful_rank,
-         created_at DESC
-''', product_id=product_id, uid=uid)
+{order_clause}
+{limit_clause}
+'''
+
+        rows = app.db.execute(query, **params)
 
         return [ProductReview(*row) for row in rows]

@@ -5,6 +5,7 @@ from flask import (
 from flask_login import login_required, current_user
 from pathlib import Path
 from .models.product_review import ProductReview
+import math
 
 bp = Blueprint('social', __name__)
 
@@ -252,8 +253,19 @@ def product_review(product_id):
             flash("Review saved.")
             return redirect(url_for('social.product_review', product_id=product_id))
 
+    review_page = request.args.get('page', 1, type=int)
+    per_page = 10
+    review_sort = request.args.get('sort', 'helpful')
+    review_min_rating = request.args.get('stars', type=int)
     # 3. Load all reviews (with helpful counts); find the current user's review
-    all_reviews = ProductReview.get_for_product(product_id, user_id=current_user.id)
+    all_reviews = ProductReview.get_for_product(
+        product_id,
+        user_id=current_user.id,
+        per_page=per_page,
+        page=review_page,
+        min_rating=review_min_rating,
+        sort=review_sort
+    )
     user_review = next((r for r in all_reviews if r.user_id == current_user.id), None)
 
     # 4. Summary (avg + count)
@@ -267,13 +279,30 @@ def product_review(product_id):
         pid=product_id
     )
     rating_summary = summary_rows[0] if summary_rows else None
+    total_reviews = rating_summary.num_reviews if rating_summary else 0
+    total_review_pages = max(1, math.ceil(total_reviews / per_page)) if total_reviews else 1
+    breakdown_rows = app.db.execute(
+        """
+        SELECT rating, COUNT(*) AS cnt
+        FROM product_reviews
+        WHERE product_id = :pid
+        GROUP BY rating
+        """,
+        pid=product_id
+    )
+    rating_breakdown = {r.rating: r.cnt for r in breakdown_rows}
 
     return render_template(
         'product_review.html',
         product=product,
         user_review=user_review,
         all_reviews=all_reviews,
-        rating_summary=rating_summary
+        rating_summary=rating_summary,
+        rating_breakdown=rating_breakdown,
+        review_sort=review_sort,
+        review_min_rating=review_min_rating,
+        review_page=review_page,
+        total_review_pages=total_review_pages
     )
 
 
@@ -284,45 +313,60 @@ def my_reviews():
     List all reviews authored by the current user (product + seller),
     newest first, with links to edit.
     """
-    product_reviews = app.db.execute(
-        """
-        SELECT pr.product_review_id,
-               pr.product_id,
-               pr.rating,
-               pr.body,
-               pr.created_at,
-               p.name AS product_name,
-               (SELECT COUNT(*) FROM product_reviews WHERE product_id = pr.product_id) AS total_reviews_for_product
-        FROM product_reviews pr
-        JOIN products p ON pr.product_id = p.id
-        WHERE pr.user_id = :uid
-        ORDER BY pr.created_at DESC
-        """,
-        uid=current_user.id
-    )
+    ftype = request.args.get('type', 'all').lower()
+    if ftype not in ('all', 'product', 'seller'):
+        ftype = 'all'
+    min_rating = request.args.get('stars', type=int)
 
-    seller_reviews = app.db.execute(
-        """
-        SELECT sr.seller_review_id,
-               sr.seller_id,
-               sr.rating,
-               sr.body,
-               sr.created_at,
-               u.firstname,
-               u.lastname,
-               (SELECT COUNT(*) FROM seller_reviews WHERE seller_id = sr.seller_id) AS total_reviews_for_seller
-        FROM seller_reviews sr
-        JOIN users u ON sr.seller_id = u.id
-        WHERE sr.user_id = :uid
-        ORDER BY sr.created_at DESC
-        """,
-        uid=current_user.id
-    )
+    product_reviews = []
+    if ftype in ('all', 'product'):
+        product_reviews = app.db.execute(
+            """
+            SELECT pr.product_review_id,
+                   pr.product_id,
+                   pr.rating,
+                   pr.body,
+                   pr.created_at,
+                   p.name AS product_name,
+                   (SELECT COUNT(*) FROM product_reviews WHERE product_id = pr.product_id) AS total_reviews_for_product
+            FROM product_reviews pr
+            JOIN products p ON pr.product_id = p.id
+            WHERE pr.user_id = :uid
+              AND (:min_rating IS NULL OR pr.rating >= :min_rating)
+            ORDER BY pr.created_at DESC
+            """,
+            uid=current_user.id,
+            min_rating=min_rating
+        )
+
+    seller_reviews = []
+    if ftype in ('all', 'seller'):
+        seller_reviews = app.db.execute(
+            """
+            SELECT sr.seller_review_id,
+                   sr.seller_id,
+                   sr.rating,
+                   sr.body,
+                   sr.created_at,
+                   u.firstname,
+                   u.lastname,
+                   (SELECT COUNT(*) FROM seller_reviews WHERE seller_id = sr.seller_id) AS total_reviews_for_seller
+            FROM seller_reviews sr
+            JOIN users u ON sr.seller_id = u.id
+            WHERE sr.user_id = :uid
+              AND (:min_rating IS NULL OR sr.rating >= :min_rating)
+            ORDER BY sr.created_at DESC
+            """,
+            uid=current_user.id,
+            min_rating=min_rating
+        )
 
     return render_template(
         'my_reviews.html',
         product_reviews=product_reviews,
-        seller_reviews=seller_reviews
+        seller_reviews=seller_reviews,
+        filter_type=ftype,
+        filter_min_rating=min_rating
     )
 
 

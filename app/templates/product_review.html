@@ -58,6 +58,23 @@
 
 <h3>All reviews for this product</h3>
 {% if all_reviews %}
+  {% if total_review_pages and total_review_pages > 1 %}
+  <nav aria-label="Review pagination top" class="mb-2">
+    <ul class="pagination pagination-modern">
+      <li class="page-item {% if review_page <= 1 %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('social.product_review', product_id=product.id, page=review_page-1) }}">Previous</a>
+      </li>
+      {% for p in range(1, total_review_pages + 1) %}
+      <li class="page-item {% if p == review_page %}active{% endif %}">
+        <a class="page-link" href="{{ url_for('social.product_review', product_id=product.id, page=p) }}">{{ p }}</a>
+      </li>
+      {% endfor %}
+      <li class="page-item {% if review_page >= total_review_pages %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('social.product_review', product_id=product.id, page=review_page+1) }}">Next</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
   <table class="table table-striped">
     <thead>
       <tr>
@@ -101,7 +118,7 @@
                   Helpful ({{ r.helpful_count }})
                 </a>
               {% endif %}
-              {% if r.helpful_rank and r.helpful_rank <= 3 %}
+              {% if r.helpful_rank and r.helpful_rank <= 3 and r.helpful_count > 0 %}
                 <span class="badge badge-info">Top helpful</span>
               {% endif %}
             </div>
@@ -111,6 +128,23 @@
       {% endfor %}
     </tbody>
   </table>
+  {% if total_review_pages and total_review_pages > 1 %}
+  <nav aria-label="Review pagination bottom" class="mt-3">
+    <ul class="pagination pagination-modern">
+      <li class="page-item {% if review_page <= 1 %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('social.product_review', product_id=product.id, page=review_page-1) }}">Previous</a>
+      </li>
+      {% for p in range(1, total_review_pages + 1) %}
+      <li class="page-item {% if p == review_page %}active{% endif %}">
+        <a class="page-link" href="{{ url_for('social.product_review', product_id=product.id, page=p) }}">{{ p }}</a>
+      </li>
+      {% endfor %}
+      <li class="page-item {% if review_page >= total_review_pages %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('social.product_review', product_id=product.id, page=review_page+1) }}">Next</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
 {% else %}
   <p>No reviews yet.</p>
 {% endif %}
