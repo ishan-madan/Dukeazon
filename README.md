@@ -151,7 +151,7 @@ When editing the schema, modify `db/create.sql` and `db/load.sql`, then re-run `
    - Build data-access helpers in `app/models/`.
    - Extend or create a blueprint in `app/`.
    - Create templates under `app/templates/` and optional static assets under `app/static/`.
-   - Update `FAQ.md` or `this read.md` if the workflow impacts end users.
+   - Update `FAQ.md` or `this README.md` if the workflow impacts end users.
 
 ---
 
@@ -190,7 +190,7 @@ Load additional environment variables in your shell before `flask run` if you ne
 - `TUTORIAL.md`: Step-by-step walkthrough for the MS requirements and UI flows.
 - `LICENSE`: Licensing for derived work.
 
-If you improve the skeleton (new docs, features, scripts), update this `read.md` alongside your code so new collaborators always have the latest instructions.
+If you improve the skeleton (new docs, features, scripts), update this `README.md` alongside your code so new collaborators always have the latest instructions.
 
 ---
 
