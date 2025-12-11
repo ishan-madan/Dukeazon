@@ -19,7 +19,8 @@ SELECT o.id,
        o.status,
        o.total_amount,
        COALESCE(COUNT(oi.id), 0) AS item_count,
-       COALESCE(SUM(CASE WHEN oi.fulfilled THEN 1 ELSE 0 END), 0) AS fulfilled_count
+       COALESCE(SUM(CASE WHEN oi.fulfilled THEN 1 ELSE 0 END), 0) AS fulfilled_count,
+       MAX(oi.fulfillment_status) AS primary_fulfillment_status
 FROM Orders o
 LEFT JOIN OrderItems oi ON o.id = oi.order_id
 WHERE o.user_id = :user_id
@@ -29,6 +30,7 @@ ORDER BY o.created_at DESC
 
         orders = []
         for row in rows:
+            fulfillment_status = row[7] if row[7] else 'Order Placed'
             orders.append({
                 "id": row[0],
                 "user_id": row[1],
@@ -37,7 +39,8 @@ ORDER BY o.created_at DESC
                 "total_amount": row[4],
                 "item_count": row[5],
                 "fulfilled_count": row[6],
-                "is_fulfilled": row[5] > 0 and row[5] == row[6]
+                "is_fulfilled": row[5] > 0 and row[5] == row[6],
+                "fulfillment_status": fulfillment_status
             })
         return orders
 
@@ -262,18 +265,19 @@ UPDATE Orders SET status = 'shipped' WHERE id = :order_id
 UPDATE Orders SET status = 'pending' WHERE id = :order_id
 """), {"order_id": order_id})
 
-@staticmethod
+    @staticmethod
     def get_user_purchases(user_id, q=None):
         base_sql = """
         SELECT oi.product_id,
-        p.name AS product_name,
-        oi.quantity,
-        oi.unit_price,
-        oi.subtotal,
-        oi.fulfilled,
-        oi.fulfilled_at,
-        oi.order_id,
-        o.created_at AS order_date
+               p.name AS product_name,
+               oi.quantity,
+               oi.unit_price,
+               oi.subtotal,
+               oi.fulfilled,
+               oi.fulfilled_at,
+               oi.order_id,
+               o.created_at AS order_date,
+               COALESCE(oi.fulfillment_status, 'Order Placed') AS fulfillment_status
         FROM OrderItems oi
         JOIN Orders o ON oi.order_id = o.id
         JOIN Products p ON oi.product_id = p.id
@@ -302,6 +306,7 @@ UPDATE Orders SET status = 'pending' WHERE id = :order_id
                 "fulfilled": row[5],
                 "fulfilled_at": row[6],
                 "order_id": row[7],
-                "order_date": row[8]
+                "order_date": row[8],
+                "fulfillment_status": row[9]
             })
         return result

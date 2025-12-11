@@ -60,11 +60,11 @@
                   <div>
                     {% set status = item.fulfillment_status if item.fulfillment_status is defined else ( 'Delivered' if item.fulfilled else 'Order Placed') %}
                     {% if status == 'Delivered' %}
-                      <span class="badge badge-success">Delivered</span>
+                      <span class="badge" style="background-color:#28a745;color:#fff;">Delivered</span>
                     {% elif status == 'Shipped' %}
-                      <span class="badge badge-info">Shipped</span>
+                      <span class="badge" style="background-color:#007bff;color:#fff;">Shipped</span>
                     {% else %}
-                      <span class="badge badge-secondary">Order Placed</span>
+                      <span class="badge" style="background-color:#6A0DAD;color:#fff;">Order Placed</span>
                     {% endif %}
                     {% if item.fulfilled_at %}
                       <div class="small text-muted">{{ item.fulfilled_at }}</div>

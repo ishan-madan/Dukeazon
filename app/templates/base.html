@@ -324,9 +324,26 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
+    .status-pill-top {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
     .status-pill.success { background: rgba(46, 204, 113, 0.15); color: #1f8a4d; }
     .status-pill.warning { background: rgba(255, 193, 7, 0.18); color: #a06b00; }
     .status-pill.info { background: rgba(23, 162, 184, 0.18); color: #0b5c6b; }
+    /* Fulfillment status colors */
+    .status-pill.order-placed { background: rgba(128, 0, 128, 0.15); color: #6b0080; }
+    .status-pill.shipped { background: rgba(0, 123, 255, 0.15); color: #003d99; }
+    .status-pill.delivered { background: rgba(40, 167, 69, 0.15); color: #1f8a4d; }
+    .status-pill-top.order-placed { background: #e6d9f0; color: #6b0080; }
+    .status-pill-top.shipped { background: #d9ecf7; color: #003d99; }
+    .status-pill-top.delivered { background: #d4edda; color: #1f8a4d; }
     .order-card {
       border-radius: 1.1rem;
       border: none;
