@@ -153,7 +153,7 @@ WHERE user_id = :user_id
 """, user_id=user_id)
 
     @staticmethod
-    def checkout(user_id):
+    def checkout(user_id, shipping_info=None):
         with app.db.engine.begin() as conn:
             cart_rows = conn.execute(text("""
 SELECT c.listing_id,
@@ -174,13 +174,14 @@ FOR UPDATE
                 raise ValueError("Your cart is empty.")
 
             balance_row = conn.execute(text("""
-SELECT balance FROM Users WHERE id = :user_id FOR UPDATE
+SELECT balance, address FROM Users WHERE id = :user_id FOR UPDATE
 """), {"user_id": user_id}).first()
 
             if not balance_row:
                 raise ValueError("User not found.")
 
             balance = balance_row[0]
+            fallback_address = balance_row[1]
 
             line_items = []
             total_amount = Decimal("0")
@@ -205,11 +206,40 @@ SELECT balance FROM Users WHERE id = :user_id FOR UPDATE
             if balance < total_amount:
                 raise ValueError("Insufficient balance to complete checkout.")
 
+            shipping_payload = shipping_info or {}
+            if not isinstance(shipping_payload, dict):
+                shipping_payload = {}
+
+            def _clean(value):
+                if value is None:
+                    return None
+                if not isinstance(value, str):
+                    value = str(value)
+                value = value.strip()
+                return value or None
+
+            shipping_street = _clean(shipping_payload.get('street'))
+            shipping_city = _clean(shipping_payload.get('city'))
+            shipping_state = _clean(shipping_payload.get('state'))
+            shipping_zip = _clean(shipping_payload.get('zip_code'))
+            shipping_apt = _clean(shipping_payload.get('apt'))
+
+            if not any([shipping_street, shipping_city, shipping_state, shipping_zip, shipping_apt]) and fallback_address:
+                shipping_street = fallback_address
+
             order_row = conn.execute(text("""
-INSERT INTO Orders (user_id, total_amount, status)
-VALUES (:user_id, :total_amount, 'pending')
+INSERT INTO Orders (user_id, total_amount, status, shipping_street, shipping_city, shipping_state, shipping_zip, shipping_apt)
+VALUES (:user_id, :total_amount, 'pending', :shipping_street, :shipping_city, :shipping_state, :shipping_zip, :shipping_apt)
 RETURNING id
-"""), {"user_id": user_id, "total_amount": total_amount}).first()
+"""), {
+                "user_id": user_id,
+                "total_amount": total_amount,
+                "shipping_street": shipping_street,
+                "shipping_city": shipping_city,
+                "shipping_state": shipping_state,
+                "shipping_zip": shipping_zip,
+                "shipping_apt": shipping_apt
+            }).first()
 
             order_id = order_row[0]
 

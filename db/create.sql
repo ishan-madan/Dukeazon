@@ -78,7 +78,12 @@ CREATE TABLE Orders (
     user_id INT NOT NULL REFERENCES Users(id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     status VARCHAR(32) NOT NULL DEFAULT 'pending',
-    total_amount DECIMAL(12,2) NOT NULL CHECK (total_amount >= 0)
+    total_amount DECIMAL(12,2) NOT NULL CHECK (total_amount >= 0),
+    shipping_street VARCHAR(255),
+    shipping_city VARCHAR(255),
+    shipping_state VARCHAR(64),
+    shipping_zip VARCHAR(32),
+    shipping_apt VARCHAR(255)
 );
 
 CREATE INDEX orders_user_created_idx ON Orders(user_id, created_at DESC);
