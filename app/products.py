@@ -27,6 +27,13 @@ def detail(product_id):
         ('monthly', 'Every Month'),
         ('quarterly', 'Every 3 Months')
     ]
+    # Check if user has purchased this product
+    has_purchased = False
+    has_delivered_order = False
+    if current_user.is_authenticated:
+        purchase_rows = ProductSeller.get_user_purchases_for_product(current_user.id, product_id)
+        has_purchased = bool(purchase_rows)
+        has_delivered_order = ProductSeller.get_user_delivered_orders_for_product(current_user.id, product_id)
     return render_template('product_detail.html',
                            product=product,
                            sellers=sellers,
@@ -34,7 +41,9 @@ def detail(product_id):
                            suggestions=suggestions,
                            allow_subscription=allow_subscription,
                            subscription=existing_subscription,
-                           subscription_options=frequency_options)
+                           subscription_options=frequency_options,
+                           has_purchased=has_purchased,
+                           has_delivered_order=has_delivered_order)
 
 
 @bp.route('/new', methods=['GET', 'POST'])

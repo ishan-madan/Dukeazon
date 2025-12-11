@@ -310,3 +310,12 @@ UPDATE Orders SET status = 'pending' WHERE id = :order_id
                 "fulfillment_status": row[9]
             })
         return result
+
+    @staticmethod
+    def user_has_delivered_order_with_product(user_id, product_id):
+        rows = app.db.execute('''
+SELECT COUNT(*) FROM OrderItems oi
+JOIN Orders o ON oi.order_id = o.id
+WHERE o.user_id = :user_id AND oi.product_id = :product_id AND COALESCE(oi.fulfillment_status, 'Order Placed') = 'Delivered'
+''', user_id=user_id, product_id=product_id)
+        return rows[0][0] > 0

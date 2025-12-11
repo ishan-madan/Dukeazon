@@ -279,3 +279,20 @@ WHERE seller_id = :seller_id
             "totals_recent": {"units": int(totals_recent[0] or 0), "revenue": float(totals_recent[1] or 0.0)},
             "totals_all": {"units": int(totals_all[0] or 0), "revenue": float(totals_all[1] or 0.0)}
         }
+
+    @staticmethod
+    def get_user_purchases_for_product(user_id, product_id):
+        rows = app.db.execute('''
+SELECT id FROM Purchases WHERE uid = :user_id AND pid = :product_id
+''', user_id=user_id, product_id=product_id)
+        return rows
+
+    @staticmethod
+    def get_user_delivered_orders_for_product(user_id, product_id):
+        rows = app.db.execute('''
+SELECT 1 FROM OrderItems oi
+JOIN Orders o ON oi.order_id = o.id
+WHERE o.user_id = :user_id AND oi.product_id = :product_id AND COALESCE(oi.fulfillment_status, 'Order Placed') = 'Delivered'
+LIMIT 1
+''', user_id=user_id, product_id=product_id)
+        return bool(rows)
