@@ -24,7 +24,7 @@ def index():
                               sort=sort,
                               available=True,
                               rating_threshold=rating_threshold)
-    per_page = 12
+    per_page = 10
     page = request.args.get('page', 1, type=int)
 
     listings_by_product = ProductSeller.get_active_listings()

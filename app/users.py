@@ -6,6 +6,7 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 
 from .models.user import User
+from .models.subscription import Subscription
 
 
 from flask import Blueprint
@@ -115,6 +116,7 @@ class BalanceForm(FlaskForm):
 def account():
     update_form = UpdateAccountForm()
     balance_form = BalanceForm()
+    subscriptions = Subscription.get_active_by_user(current_user.id)
 
                                              
     if request.method == 'GET':
@@ -164,4 +166,15 @@ def account():
     return render_template('account.html',
                            update_form=update_form,
                            balance_form=balance_form,
-                           user=current_user)
+                           user=current_user,
+                           subscriptions=subscriptions)
+
+
+@bp.route('/subscriptions/<int:subscription_id>/cancel', methods=['POST'])
+@login_required
+def cancel_subscription(subscription_id):
+    if Subscription.cancel(subscription_id, current_user.id):
+        flash('Subscription canceled.', 'success')
+    else:
+        flash('Unable to cancel that subscription.', 'danger')
+    return redirect(url_for('users.account'))

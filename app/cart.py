@@ -127,6 +127,67 @@ def checkout(user_id):
     return redirect(url_for('cart.order_detail', user_id=user_id, order_id=order_id))
 
 
+@bp.route('/<int:user_id>/payment', methods=['GET', 'POST'])
+@login_required
+def payment(user_id):
+    _ensure_owner(user_id)
+
+    items = Cart.get_by_user(user_id)
+    if not items:
+        flash('Add some items to your cart before checking out.', 'warning')
+        return redirect(url_for('cart.cart', user_id=user_id))
+
+    total_price = sum((item.subtotal for item in items), Decimal("0"))
+
+    fields = ['card_number', 'expiration', 'cvv', 'street', 'city', 'state', 'zip_code', 'apt']
+    form_data = {field: '' for field in fields}
+
+    if request.method == 'POST':
+        for field in fields:
+            form_data[field] = request.form.get(field, '').strip()
+
+        required_labels = {
+            'card_number': 'card number',
+            'expiration': 'expiration date',
+            'cvv': 'CVV',
+            'street': 'street address',
+            'city': 'city',
+            'state': 'state',
+            'zip_code': 'ZIP code'
+        }
+        errors = []
+        missing = [label for key, label in required_labels.items() if not form_data.get(key)]
+        if missing:
+            errors.append('Please provide your ' + ', '.join(missing) + '.')
+
+        card_digits = form_data['card_number'].replace(' ', '').replace('-', '')
+        if form_data['card_number'] and not card_digits.isdigit():
+            errors.append('Card number should contain digits only.')
+        if card_digits and not (12 <= len(card_digits) <= 19):
+            errors.append('Card number should be between 12 and 19 digits.')
+
+        if form_data['cvv'] and not (form_data['cvv'].isdigit() and len(form_data['cvv']) in (3, 4)):
+            errors.append('CVV should be 3 or 4 digits.')
+
+        if errors:
+            for err in errors:
+                flash(err, 'danger')
+        else:
+            try:
+                order_id = Cart.checkout(user_id)
+            except ValueError as exc:
+                flash(str(exc), 'danger')
+            else:
+                flash('Payment received! Your order has been placed.', 'success')
+                return redirect(url_for('cart.order_detail', user_id=user_id, order_id=order_id))
+
+    return render_template('payment.html',
+                           user_id=user_id,
+                           items=items,
+                           total=total_price,
+                           form_data=form_data)
+
+
 @bp.route('/<int:user_id>/orders', methods=['GET'])
 @login_required
 def orders(user_id):
@@ -219,18 +280,4 @@ def fulfill_item(seller_id, item_id):
         flash(str(exc), 'danger')
     else:
         flash("Marked item as fulfilled.", 'success')
-    return redirect(url_for('cart.seller_orders_view', seller_id=seller_id))
-
-
-@bp.route('/seller/<int:seller_id>/fulfillment/<int:item_id>/status', methods=['POST'])
-@login_required
-def update_item_status(seller_id, item_id):
-    _ensure_owner(seller_id)
-    status = request.form.get('status')
-    try:
-        Order.update_item_status(seller_id, item_id, status)
-    except ValueError as exc:
-        flash(str(exc), 'danger')
-    else:
-        flash(f"Updated status to '{status}'.", 'success')
     return redirect(url_for('cart.seller_orders_view', seller_id=seller_id))

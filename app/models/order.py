@@ -19,8 +19,7 @@ SELECT o.id,
        o.status,
        o.total_amount,
        COALESCE(COUNT(oi.id), 0) AS item_count,
-       COALESCE(SUM(CASE WHEN oi.fulfilled THEN 1 ELSE 0 END), 0) AS fulfilled_count,
-       MAX(oi.fulfillment_status) AS primary_fulfillment_status
+       COALESCE(SUM(CASE WHEN oi.fulfilled THEN 1 ELSE 0 END), 0) AS fulfilled_count
 FROM Orders o
 LEFT JOIN OrderItems oi ON o.id = oi.order_id
 WHERE o.user_id = :user_id
@@ -30,7 +29,6 @@ ORDER BY o.created_at DESC
 
         orders = []
         for row in rows:
-            fulfillment_status = row[7] if row[7] else 'Order Placed'
             orders.append({
                 "id": row[0],
                 "user_id": row[1],
@@ -39,8 +37,7 @@ ORDER BY o.created_at DESC
                 "total_amount": row[4],
                 "item_count": row[5],
                 "fulfilled_count": row[6],
-                "is_fulfilled": row[5] > 0 and row[5] == row[6],
-                "fulfillment_status": fulfillment_status
+                "is_fulfilled": row[5] > 0 and row[5] == row[6]
             })
         return orders
 
@@ -58,24 +55,23 @@ WHERE id = :order_id AND user_id = :user_id
         order = Order(*order_rows[0])
 
         item_rows = app.db.execute("""
-    SELECT oi.id,
-           oi.listing_id,
-           oi.product_id,
-           p.name,
-           oi.seller_id,
-           u.firstname || ' ' || u.lastname AS seller_name,
-           oi.unit_price,
-           oi.quantity,
-           oi.subtotal,
-           oi.fulfilled,
-           oi.fulfilled_at,
-           COALESCE(oi.fulfillment_status, 'Order Placed')
-    FROM OrderItems oi
-    JOIN Products p ON oi.product_id = p.id
-    JOIN Users u ON oi.seller_id = u.id
-    WHERE oi.order_id = :order_id
-    ORDER BY oi.id
-    """, order_id=order_id)
+SELECT oi.id,
+       oi.listing_id,
+       oi.product_id,
+       p.name,
+       oi.seller_id,
+       u.firstname || ' ' || u.lastname AS seller_name,
+       oi.unit_price,
+       oi.quantity,
+       oi.subtotal,
+       oi.fulfilled,
+       oi.fulfilled_at
+FROM OrderItems oi
+JOIN Products p ON oi.product_id = p.id
+JOIN Users u ON oi.seller_id = u.id
+WHERE oi.order_id = :order_id
+ORDER BY oi.id
+""", order_id=order_id)
 
         items = []
         for row in item_rows:
@@ -90,8 +86,7 @@ WHERE id = :order_id AND user_id = :user_id
                 "quantity": row[7],
                 "subtotal": row[8],
                 "fulfilled": row[9],
-                "fulfilled_at": row[10],
-                "fulfillment_status": row[11]
+                "fulfilled_at": row[10]
             })
 
         is_fulfilled = len(items) > 0 and all(item["fulfilled"] for item in items)
@@ -121,7 +116,6 @@ SELECT oi.id,
        oi.subtotal,
        oi.fulfilled,
        oi.fulfilled_at,
-       COALESCE(oi.fulfillment_status, 'Order Placed') as fulfillment_status,
        o.user_id,
        bu.firstname || ' ' || bu.lastname AS buyer_name,
        bu.address AS buyer_address,
@@ -155,14 +149,13 @@ WHERE oi.seller_id = :seller_id
                 "subtotal": row[6],
                 "fulfilled": row[7],
                 "fulfilled_at": row[8],
-                "fulfillment_status": row[9],
-                "buyer_id": row[10],
-                "buyer_name": row[11],
-                "buyer_address": row[12],
-                "order_created_at": row[13],
-                "order_status": row[14],
-                "order_total": row[15],
-                "order_total_items": row[16]
+                "buyer_id": row[9],
+                "buyer_name": row[10],
+                "buyer_address": row[11],
+                "order_created_at": row[12],
+                "order_status": row[13],
+                "order_total": row[14],
+                "order_total_items": row[15]
             })
         return items
 
@@ -203,81 +196,19 @@ SET status = 'partial'
 WHERE id = :order_id AND status <> 'fulfilled'
 """), {"order_id": order_id})
 
-    @staticmethod
-    def update_item_status(seller_id, item_id, status):
-        """
-        Update the fulfillment_status for an order item. If status == 'Delivered', mark fulfilled=True and set fulfilled_at.
-        After updating, recompute the containing order's aggregate status: 'fulfilled' if all delivered, 'shipped' if any shipped, else 'pending'.
-        """
-        valid = ('Order Placed', 'Shipped', 'Delivered')
-        if status not in valid:
-            raise ValueError('Invalid status')
-
-        with app.db.engine.begin() as conn:
-            # Update the item
-            if status == 'Delivered':
-                row = conn.execute(text("""
-UPDATE OrderItems
-SET fulfillment_status = :status,
-    fulfilled = TRUE,
-    fulfilled_at = now()
-WHERE id = :item_id AND seller_id = :seller_id
-RETURNING order_id
-"""), {"status": status, "item_id": item_id, "seller_id": seller_id}).first()
-            else:
-                row = conn.execute(text("""
-UPDATE OrderItems
-SET fulfillment_status = :status,
-    fulfilled = FALSE,
-    fulfilled_at = NULL
-WHERE id = :item_id AND seller_id = :seller_id
-RETURNING order_id
-"""), {"status": status, "item_id": item_id, "seller_id": seller_id}).first()
-
-            if not row:
-                raise ValueError("Order item not found or permission denied.")
-
-            order_id = row[0]
-
-            # Recompute aggregate order status
-            rows = conn.execute(text("""
-SELECT COUNT(*) FILTER (WHERE COALESCE(fulfillment_status,'Order Placed') = 'Delivered') AS delivered_count,
-       COUNT(*) FILTER (WHERE COALESCE(fulfillment_status,'Order Placed') = 'Shipped') AS shipped_count,
-       COUNT(*) AS total_count
-FROM OrderItems
-WHERE order_id = :order_id
-"""), {"order_id": order_id}).first()
-
-            delivered_count = rows[0]
-            shipped_count = rows[1]
-            total_count = rows[2]
-
-            if delivered_count == total_count and total_count > 0:
-                conn.execute(text("""
-UPDATE Orders SET status = 'fulfilled' WHERE id = :order_id
-"""), {"order_id": order_id})
-            elif shipped_count > 0:
-                conn.execute(text("""
-UPDATE Orders SET status = 'shipped' WHERE id = :order_id
-"""), {"order_id": order_id})
-            else:
-                conn.execute(text("""
-UPDATE Orders SET status = 'pending' WHERE id = :order_id
-"""), {"order_id": order_id})
 
     @staticmethod
     def get_user_purchases(user_id, q=None):
         base_sql = """
         SELECT oi.product_id,
-               p.name AS product_name,
-               oi.quantity,
-               oi.unit_price,
-               oi.subtotal,
-               oi.fulfilled,
-               oi.fulfilled_at,
-               oi.order_id,
-               o.created_at AS order_date,
-               COALESCE(oi.fulfillment_status, 'Order Placed') AS fulfillment_status
+        p.name AS product_name,
+        oi.quantity,
+        oi.unit_price,
+        oi.subtotal,
+        oi.fulfilled,
+        oi.fulfilled_at,
+        oi.order_id,
+        o.created_at AS order_date
         FROM OrderItems oi
         JOIN Orders o ON oi.order_id = o.id
         JOIN Products p ON oi.product_id = p.id
@@ -306,7 +237,6 @@ UPDATE Orders SET status = 'pending' WHERE id = :order_id
                 "fulfilled": row[5],
                 "fulfilled_at": row[6],
                 "order_id": row[7],
-                "order_date": row[8],
-                "fulfillment_status": row[9]
+                "order_date": row[8]
             })
         return result

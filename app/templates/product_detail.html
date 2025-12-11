@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
-  <a href="{{ url_for('products.browse') }}">&larr; Back to products</a>
+  <a href="{{ url_for('index.index') }}">&larr; Back to products</a>
   <div class="row mt-3">
     <div class="col-md-5 mb-3">
       <img src="{{ product.image_link or 'https://via.placeholder.com/500?text=No+Image' }}"
@@ -26,6 +26,36 @@
       </div>
       {% else %}
       <div class="mt-3"><small class="text-muted">Log in to rate this product.</small></div>
+      {% endif %}
+
+      {% if allow_subscription %}
+      <div class="mt-4 p-3 border rounded bg-light">
+        <h5 class="mb-2">Subscription</h5>
+        {% if current_user.is_authenticated %}
+          {% if subscription %}
+            {% set freq_map = {'weekly': 'every week', 'monthly': 'every month', 'quarterly': 'every 3 months'} %}
+            <p class="mb-2 text-success">
+              You’re subscribed for delivery {{ freq_map.get(subscription.frequency, 'on your chosen schedule') }}.
+            </p>
+            <a href="{{ url_for('users.account') }}" class="btn btn-outline-primary btn-sm">Manage subscription</a>
+          {% else %}
+            <form method="post" action="{{ url_for('products.subscribe', product_id=product.id) }}" class="form-inline flex-column flex-sm-row align-items-sm-end mt-2">
+              <div class="form-group mr-sm-2 mb-2 mb-sm-0 w-100">
+                <label class="sr-only" for="subscription-frequency">Frequency</label>
+                <select id="subscription-frequency" class="form-control w-100" name="frequency" required>
+                  <option value="">Choose frequency</option>
+                  {% for value, label in subscription_options %}
+                    <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary">Subscribe</button>
+            </form>
+          {% endif %}
+        {% else %}
+          <p class="mb-0 text-muted">Log in to subscribe for automatic deliveries.</p>
+        {% endif %}
+      </div>
       {% endif %}
     </div>
   </div>

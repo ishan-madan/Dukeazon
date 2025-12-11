@@ -44,7 +44,7 @@
           <div class="card-header">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
               <h2 class="h5 mb-3 mb-md-0 text-white">Products for Sale</h2>
-              <a class="btn btn-primary" href="{{ url_for('products.browse') }}">Browse &amp; Search</a>
+              <a class="btn btn-primary" href="{{ url_for('index.index') }}">Refresh Listings</a>
             </div>
           </div>
           <div class="card-body">
@@ -81,7 +81,7 @@
                          step="0.5"
                          class="form-control"
                          name="rating_threshold"
-                         placeholder="Rating ≥"
+                         placeholder="Trusted ≥"
                          value="{{ rating_threshold if rating_threshold is not none else '' }}">
                 </div>
                 <div class="col-md-2 mb-2">

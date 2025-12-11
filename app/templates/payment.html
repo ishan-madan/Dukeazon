@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="card card-lift mb-4">
+        <div class="card-header">
+          <h4 class="mb-0">Secure Payment</h4>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">Enter your payment method details. We do not store your card information.</p>
+          <form method="post" action="{{ url_for('cart.payment', user_id=user_id) }}">
+            <div class="form-group">
+              <label for="card_number">Card Number</label>
+              <input type="text" id="card_number" name="card_number" class="form-control"
+                     value="{{ form_data.card_number }}" placeholder="1234 5678 9012 3456" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="expiration">Expiration Date</label>
+                <input type="text" id="expiration" name="expiration" class="form-control"
+                       value="{{ form_data.expiration }}" placeholder="MM/YY" required>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="cvv">Security Code (CVV)</label>
+                <input type="text" id="cvv" name="cvv" class="form-control"
+                       value="{{ form_data.cvv }}" placeholder="123" required>
+              </div>
+            </div>
+
+            <hr class="my-4">
+            <h5>Shipping Address</h5>
+            <div class="form-group">
+              <label for="street">Street Address</label>
+              <input type="text" id="street" name="street" class="form-control"
+                     value="{{ form_data.street }}" placeholder="123 Duke St" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="city">City</label>
+                <input type="text" id="city" name="city" class="form-control"
+                       value="{{ form_data.city }}" required>
+              </div>
+              <div class="form-group col-md-3">
+                <label for="state">State</label>
+                <input type="text" id="state" name="state" class="form-control"
+                       value="{{ form_data.state }}" maxlength="2" required>
+              </div>
+              <div class="form-group col-md-3">
+                <label for="zip_code">ZIP</label>
+                <input type="text" id="zip_code" name="zip_code" class="form-control"
+                       value="{{ form_data.zip_code }}" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="apt">APT / Unit (optional)</label>
+              <input type="text" id="apt" name="apt" class="form-control"
+                     value="{{ form_data.apt }}" placeholder="Unit 12B">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg mt-4">
+              Place Order
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card card-lift">
+        <div class="card-header">
+          <h5 class="mb-0">Order Summary</h5>
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush mb-3">
+            {% for item in items %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>{{ item.product_name }}</strong>
+                  <div class="small text-muted">x{{ item.quantity }} @ ${{ '%.2f'|format(item.unit_price) }}</div>
+                </div>
+                <span>${{ '%.2f'|format(item.subtotal) }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted text-uppercase">Total</span>
+            <span class="h4 mb-0">${{ '%.2f'|format(total) }}</span>
+          </div>
+          <p class="text-muted small mt-3">Need to make a change? <a href="{{ url_for('cart.cart', user_id=user_id) }}">Return to cart</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

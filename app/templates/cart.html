@@ -84,7 +84,7 @@
       </div>
     </div>
     <div class="px-4 pb-4 text-md-right">
-      <form method="post" action="{{ url_for('cart.checkout', user_id=user_id) }}">
+      <form method="get" action="{{ url_for('cart.payment', user_id=user_id) }}">
         <button type="submit" class="btn btn-primary btn-lg mt-3">Checkout Securely</button>
       </form>
     </div>

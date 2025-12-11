@@ -77,8 +77,7 @@ CREATE TABLE OrderItems (
     quantity INT NOT NULL CHECK (quantity > 0),
     subtotal DECIMAL(12,2) NOT NULL CHECK (subtotal >= 0),
     fulfilled BOOLEAN NOT NULL DEFAULT FALSE,
-    fulfilled_at TIMESTAMPTZ,
-    fulfillment_status VARCHAR(32) NOT NULL DEFAULT 'Order Placed'
+    fulfilled_at TIMESTAMPTZ
 );
 
 CREATE INDEX order_items_order_idx ON OrderItems(order_id);

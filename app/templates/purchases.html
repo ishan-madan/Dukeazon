@@ -36,8 +36,11 @@
       <td>{{ p.product_name }}</td>
       <td>{{ p.quantity }}</td>
       <td>
-        {% set status_class = 'order-placed' if p.fulfillment_status == 'Order Placed' else ('shipped' if p.fulfillment_status == 'Shipped' else 'delivered') %}
-        <span class="status-pill {{ status_class }}">{{ p.fulfillment_status }}</span>
+        {% if p.fulfilled %}
+          <span class="badge bg-success">Fulfilled</span>
+        {% else %}
+          <span class="badge bg-warning text-dark">Pending</span>
+        {% endif %}
       </td>
       <td>{{ p.order_date | friendly_datetime }}</td>
       <td>

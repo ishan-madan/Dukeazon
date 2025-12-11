@@ -57,33 +57,25 @@
                 <td>{{ item.quantity }}</td>
                 <td>${{ "{:,.2f}".format(item.subtotal) }}</td>
                 <td>
-                  <div>
-                    {% set status = item.fulfillment_status if item.fulfillment_status is defined else ( 'Delivered' if item.fulfilled else 'Order Placed') %}
-                    {% if status == 'Delivered' %}
-                      <span class="badge" style="background-color:#28a745;color:#fff;">Delivered</span>
-                    {% elif status == 'Shipped' %}
-                      <span class="badge" style="background-color:#007bff;color:#fff;">Shipped</span>
-                    {% else %}
-                      <span class="badge" style="background-color:#6A0DAD;color:#fff;">Order Placed</span>
-                    {% endif %}
+                  {% if item.fulfilled %}
+                    <span class="badge badge-success">Fulfilled</span>
                     {% if item.fulfilled_at %}
                       <div class="small text-muted">{{ item.fulfilled_at }}</div>
                     {% endif %}
-                  </div>
+                  {% else %}
+                    <span class="badge badge-warning">Pending</span>
+                  {% endif %}
                 </td>
                 <td>
-                  <form method="post" action="{{ url_for('cart.update_item_status', seller_id=seller_id, item_id=item.item_id) }}">
-                    <div class="input-group input-group-sm">
-                      <select name="status" class="form-control form-control-sm">
-                        <option value="Order Placed" {% if status == 'Order Placed' %}selected{% endif %}>Order Placed</option>
-                        <option value="Shipped" {% if status == 'Shipped' %}selected{% endif %}>Shipped</option>
-                        <option value="Delivered" {% if status == 'Delivered' %}selected{% endif %}>Delivered</option>
-                      </select>
-                      <div class="input-group-append">
-                        <button class="btn btn-primary" type="submit">Save</button>
-                      </div>
-                    </div>
+                  {% if not item.fulfilled %}
+                  <form method="post"
+                        action="{{ url_for('cart.fulfill_item', seller_id=seller_id, item_id=item.item_id) }}"
+                        onsubmit="return confirm('Mark this item as fulfilled?');">
+                    <button type="submit" class="btn btn-sm btn-primary">Mark Fulfilled</button>
                   </form>
+                  {% else %}
+                    <span class="text-muted">Complete</span>
+                  {% endif %}
                 </td>
               </tr>
               {% endfor %}
