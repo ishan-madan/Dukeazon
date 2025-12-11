@@ -64,11 +64,18 @@
               </td>
               <td class="text-right">${{ "{:,.2f}".format(item.subtotal) }}</td>
               <td class="text-center">
-                <form method="post"
-                      action="{{ url_for('cart.remove_item', user_id=user_id, listing_id=item.listing_id) }}"
-                      onsubmit="return confirm('Remove this item?');">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
-                </form>
+                <div class="d-flex flex-column align-items-center">
+                  <form method="post"
+                        action="{{ url_for('cart.save_for_later', user_id=user_id, listing_id=item.listing_id) }}"
+                        class="mb-2">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Save for later</button>
+                  </form>
+                  <form method="post"
+                        action="{{ url_for('cart.remove_item', user_id=user_id, listing_id=item.listing_id) }}"
+                        onsubmit="return confirm('Remove this item?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                  </form>
+                </div>
               </td>
             </tr>
             {% endfor %}
@@ -95,6 +102,54 @@
     <p class="text-muted mb-4">Find something you love and it will appear here.</p>
     <a href="/" class="btn btn-primary mr-2">Browse Products</a>
     <a href="{{ url_for('cart.orders', user_id=user_id) }}" class="btn btn-outline-secondary mt-3 mt-sm-0">View Orders</a>
+  </div>
+{% endif %}
+
+{% if saved_items %}
+  <div class="card card-lift mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Saved for Later</h5>
+      <small class="text-muted">{{ saved_items|length }} {{ 'item' if saved_items|length == 1 else 'items' }}</small>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-modern mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Product</th>
+              <th scope="col">Seller</th>
+              <th scope="col" class="text-right">Price</th>
+              <th scope="col">Quantity</th>
+              <th scope="col" class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in saved_items %}
+            <tr>
+              <td>
+                <strong>{{ item.product_name }}</strong>
+                <div class="text-muted small">Saved {{ item.saved_at|friendly_datetime }}</div>
+              </td>
+              <td>{{ item.seller_name }}</td>
+              <td class="text-right">${{ "{:,.2f}".format(item.unit_price) }}</td>
+              <td>{{ item.quantity }}</td>
+              <td class="text-center">
+                <form method="post" class="d-inline-block"
+                      action="{{ url_for('cart.move_saved_to_cart', user_id=user_id, listing_id=item.listing_id) }}">
+                  <button type="submit" class="btn btn-sm btn-primary mb-2">Move to cart</button>
+                </form>
+                <form method="post" class="d-inline-block"
+                      action="{{ url_for('cart.remove_saved_item', user_id=user_id, listing_id=item.listing_id) }}"
+                      onsubmit="return confirm('Remove this saved item?');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 {% endif %}
 {% endblock %}

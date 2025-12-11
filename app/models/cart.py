@@ -38,6 +38,27 @@ ORDER BY p.name
         return [Cart(*row) for row in rows]
 
     @staticmethod
+    def get_saved_by_user(user_id):
+        rows = app.db.execute("""
+SELECT s.user_id,
+       s.listing_id,
+       s.product_id,
+       p.name,
+       s.seller_id,
+       u.firstname || ' ' || u.lastname AS seller_name,
+       s.unit_price,
+       s.quantity,
+       s.saved_at
+FROM SavedItems s
+JOIN Products p ON p.id = s.product_id
+JOIN Users u ON u.id = s.seller_id
+WHERE s.user_id = :user_id
+ORDER BY s.saved_at DESC
+""", user_id=user_id)
+
+        return [SavedCartItem(*row) for row in rows]
+
+    @staticmethod
     def add_item(user_id, listing_id, quantity=1):
         if quantity is None or quantity <= 0:
             raise ValueError("Quantity must be positive.")
@@ -242,9 +263,82 @@ SET balance = balance + :amount
 WHERE id = :seller_id
 """), {"amount": amount, "seller_id": seller_id})
 
-            conn.execute(text("""
+                conn.execute(text("""
 DELETE FROM Cart
 WHERE user_id = :user_id
 """), {"user_id": user_id})
 
             return order_id
+
+    @staticmethod
+    def save_for_later(user_id, listing_id):
+        with app.db.engine.begin() as conn:
+            item = conn.execute(text("""
+SELECT user_id, product_id, listing_id, seller_id, unit_price, quantity
+FROM Cart
+WHERE user_id = :user_id AND listing_id = :listing_id
+FOR UPDATE
+"""), {"user_id": user_id, "listing_id": listing_id}).first()
+
+            if not item:
+                raise ValueError("Cart item not found.")
+
+            _, product_id, listing_id_val, seller_id, unit_price, quantity = item
+
+            conn.execute(text("""
+DELETE FROM Cart
+WHERE user_id = :user_id AND listing_id = :listing_id
+"""), {"user_id": user_id, "listing_id": listing_id})
+
+            conn.execute(text("""
+INSERT INTO SavedItems (user_id, product_id, listing_id, seller_id, unit_price, quantity)
+VALUES (:user_id, :product_id, :listing_id, :seller_id, :unit_price, :quantity)
+ON CONFLICT (user_id, listing_id) DO UPDATE
+SET product_id = EXCLUDED.product_id,
+    seller_id = EXCLUDED.seller_id,
+    unit_price = EXCLUDED.unit_price,
+    quantity = EXCLUDED.quantity,
+    saved_at = CURRENT_TIMESTAMP
+"""), {
+                "user_id": user_id,
+                "product_id": product_id,
+                "listing_id": listing_id_val,
+                "seller_id": seller_id,
+                "unit_price": unit_price,
+                "quantity": quantity
+            })
+
+    @staticmethod
+    def move_saved_to_cart(user_id, listing_id):
+        rows = app.db.execute("""
+SELECT quantity
+FROM SavedItems
+WHERE user_id = :user_id AND listing_id = :listing_id
+""", user_id=user_id, listing_id=listing_id)
+        quantity = rows[0][0] if rows else None
+        if quantity is None:
+            raise ValueError("Saved item not found.")
+
+        Cart.add_item(user_id, listing_id, quantity)
+        Cart.remove_saved_item(user_id, listing_id)
+
+    @staticmethod
+    def remove_saved_item(user_id, listing_id):
+        app.db.execute("""
+DELETE FROM SavedItems
+WHERE user_id = :user_id AND listing_id = :listing_id
+""", user_id=user_id, listing_id=listing_id)
+
+
+class SavedCartItem:
+    def __init__(self, user_id, listing_id, product_id, product_name, seller_id,
+                 seller_name, unit_price, quantity, saved_at):
+        self.user_id = user_id
+        self.listing_id = listing_id
+        self.product_id = product_id
+        self.product_name = product_name
+        self.seller_id = seller_id
+        self.seller_name = seller_name
+        self.unit_price = unit_price
+        self.quantity = quantity
+        self.saved_at = saved_at
