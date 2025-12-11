@@ -40,9 +40,6 @@
         {% for _ in range(r.rating) %}&#9733;{% endfor %}
         {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
         <small>({{ r.rating }})</small>
-        {% if r.verified %}
-          <span class="badge badge-success ml-2">Verified buyer</span>
-        {% endif %}
       </td>
       <td>
         {{ r.body }}
