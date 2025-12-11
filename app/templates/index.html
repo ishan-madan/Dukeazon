@@ -1,148 +1,298 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set product_title_map = {
+    'vanilla ice cream': 'Vanilla Ice Cream',
+    'chocolate ice cream': 'Chocolate Ice Cream',
+    'strawberry ice cream': 'Strawberry Ice Cream',
+    '6-pack of paycheck pilsners': '6-Pack of Paycheck Pilsners',
+    'seven fabergé easter eggs': 'Seven Fabergé Easter Eggs',
+    'painting - the storm on the sea of galilee': 'Painting: The Storm on the Sea of Galilee'
+  } %}
 
-<br><br>
+<ul class="nav nav-tabs" id="homeTabs" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" id="shop-tab" data-toggle="tab" href="#shop" role="tab" aria-controls="shop" aria-selected="true">Shop</a>
+  </li>
+  {% if current_user.is_authenticated %}
+  <li class="nav-item">
+    <a class="nav-link" id="orders-tab" data-toggle="tab" href="#orders" role="tab" aria-controls="orders" aria-selected="false">Orders</a>
+  </li>
+  {% endif %}
+  <li class="nav-item ml-auto">
+    {% if current_user.is_authenticated %}
+    <a class="nav-link tab-icon-link" href="{{ url_for('cart.cart', user_id=current_user.id) }}" title="Open my cart">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M7 4H5L4 6h2l3.6 7.59-1.35 2.45A1 1 0 0 0 10.1 18H19v-2h-7.42l.93-1.68h5.99c.38 0 .72-.21.89-.55L22 6H6.21L5.27 4zM6 19a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm10 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+      </svg>
+      <span class="d-none d-md-inline">My Cart</span>
+    </a>
+    {% else %}
+    <a class="nav-link tab-icon-link" href="{{ url_for('users.login') }}" title="Log in to access cart">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M7 4H5L4 6h2l3.6 7.59-1.35 2.45A1 1 0 0 0 10.1 18H19v-2h-7.42l.93-1.68h5.99c.38 0 .72-.21.89-.55L22 6H6.21L5.27 4zM6 19a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm10 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+      </svg>
+      <span class="d-none d-md-inline">My Cart</span>
+    </a>
+    {% endif %}
+  </li>
+</ul>
 
-<h2>Products for sale:</h2>
-<table class='table table-hover table-bordered container'>
-  <thead class="thead-dark">
-    <tr>
-      <th scope="col">Product ID</th>
-      <th scope="col">Product Name</th>
-      <th scope="col">Price</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for product in avail_products%}
-      <tr>
-        <th scope="row">{{product.id}}</th>
-        <td>{{product.name}}</td>
-        <td>{{product.price}}</td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<div class="container mt-4">
-  <h3>Find the top-k most expensive products</h3>
-  <form id="top-k-form" class="form-inline">
-    <div class="form-group mb-2">
-      <label class="sr-only" for="top-k-input">Top k</label>
-      <input type="number"
-             class="form-control"
-             id="top-k-input"
-             name="k"
-             placeholder="Enter k"
-             min="1"
-             required>
+<div class="tab-content mt-4" id="homeTabsContent">
+  <div class="tab-pane fade show active" id="shop" role="tabpanel" aria-labelledby="shop-tab">
+    <div class="row">
+      <div class="col-12">
+        <div class="card mb-4">
+          <div class="card-header">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+              <h2 class="h5 mb-3 mb-md-0 text-white">Products for Sale</h2>
+              <a class="btn btn-primary" href="{{ url_for('index.index') }}">Refresh Listings</a>
+            </div>
+          </div>
+          <div class="card-body">
+            <form class="mb-4" method="get" action="{{ url_for('index.index') }}">
+              <input type="hidden" name="page" value="1">
+              <div class="form-row">
+                <div class="col-md-3 mb-2">
+                  <select class="form-control" name="category">
+                    <option value="">All categories</option>
+                    {% for category in categories %}
+                      <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
+                        {{ category.name }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                  <input type="text"
+                         class="form-control"
+                         name="q"
+                         placeholder="Search name or description"
+                         value="{{ query }}">
+                </div>
+                <div class="col-md-2 mb-2">
+                  <select class="form-control" name="sort">
+                    <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                  </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                  <input type="number"
+                         min="0"
+                         max="5"
+                         step="0.5"
+                         class="form-control"
+                         name="rating_threshold"
+                         placeholder="Rating ≥"
+                         value="{{ rating_threshold if rating_threshold is not none else '' }}">
+                </div>
+                <div class="col-md-2 mb-2">
+                  <button type="submit" class="btn btn-primary btn-block">Search</button>
+                </div>
+              </div>
+            </form>
+            {% if total_pages > 1 %}
+            <nav aria-label="Products pagination top" class="mb-3">
+              <ul class="pagination pagination-modern justify-content-center">
+                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index',
+                                                          page=page-1,
+                                                          category=selected_category,
+                                                          q=query,
+                                                          sort=sort,
+                                                          rating_threshold=rating_threshold) }}">Previous</a>
+                </li>
+                {% for number in page_numbers %}
+                <li class="page-item {% if number == page %}active{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index',
+                                                          page=number,
+                                                          category=selected_category,
+                                                          q=query,
+                                                          sort=sort,
+                                                          rating_threshold=rating_threshold) }}">{{ number }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                  <a class="page-link" href="{{ url_for('index.index',
+                                                          page=page+1,
+                                                          category=selected_category,
+                                                          q=query,
+                                                          sort=sort,
+                                                          rating_threshold=rating_threshold) }}">Next</a>
+                </li>
+              </ul>
+            </nav>
+            {% endif %}
+            <div class="product-grid">
+              {% for product in avail_products %}
+                {% set full_title = product_title_map.get(product.name|lower, product.name|title) %}
+                {% set hero_image = product.image_link or 'https://via.placeholder.com/600x750?text=Product' %}
+                {% set listings = product_listings.get(product.id) %}
+                {% set highlight = listings[0] if listings %}
+                {% set summary = product_ratings.get(product.id) if product_ratings is defined else None %}
+                <div class="product-card">
+                  <a class="product-media" href="{{ url_for('products.detail', product_id=product.id) }}"
+                     style="background-image: url('{{ hero_image }}');">
+                    {% if listings %}
+                      <span class="product-badge">
+                        {{ listings|length }} {{ 'seller' if listings|length == 1 else 'sellers' }}
+                      </span>
+                    {% endif %}
+                  </a>
+                  <div class="product-details">
+                    {% if product.category_name %}
+                    <div class="product-category">{{ product.category_name }}</div>
+                    {% endif %}
+                    <h3 class="product-title">
+                      <a href="{{ url_for('products.detail', product_id=product.id) }}">{{ full_title }}</a>
+                    </h3>
+                    <p class="product-description">
+                      {{ (product.description or 'Explore details on the product page.')|truncate(90, True, '...') }}
+                    </p>
+                    {% if product.best_seller_rating is not none %}
+                      {% if rating_threshold is not none and product.best_seller_rating >= rating_threshold %}
+                        <span class="badge badge-success mb-2">Trusted Seller</span>
+                      {% else %}
+                        <span class="badge badge-light mb-2">Top Seller</span>
+                      {% endif %}
+                    {% endif %}
+                    <div class="product-rating">
+                      {% if summary %}
+                        {% set num = summary.get('count', 0) %}
+                        {% if num > 0 %}
+                          {% set avg = summary.get('avg', 0) %}
+                          {% set filled = avg|round(0, 'floor')|int %}
+                          {% if filled > 5 %}
+                            {% set filled = 5 %}
+                          {% elif filled < 0 %}
+                            {% set filled = 0 %}
+                          {% endif %}
+                          {% set empty = 5 - filled %}
+                          <span>
+                            <span style="color: #f5c518;">
+                              {% for _ in range(filled) %}&#9733;{% endfor %}
+                            </span>
+                            <span style="color: #e1e5eb;">
+                              {% for _ in range(empty) %}&#9734;{% endfor %}
+                            </span>
+                            <span class="text-muted">({{ num }} reviews)</span>
+                          </span>
+                        {% else %}
+                          <small class="text-muted">No reviews yet</small>
+                        {% endif %}
+                      {% else %}
+                        <small class="text-muted">No reviews yet</small>
+                      {% endif %}
+                    </div>
+                    <div class="product-price">${{ '{:,.2f}'.format(product.price) }}</div>
+                    <div class="product-actions">
+                      {% if listings %}
+                        <div class="seller-chip">
+                          <span class="font-weight-bold">{{ highlight.seller_name }}</span>
+                          <span class="d-block text-muted" style="font-size:0.78rem;">
+                            from ${{ '{:,.2f}'.format(highlight.price) }}
+                          </span>
+                        </div>
+                        {% if current_user.is_authenticated %}
+                        <form method="post"
+                              action="{{ url_for('cart.add_item', user_id=current_user.id) }}"
+                              class="product-form-inline">
+                          <input type="hidden" name="listing_id" value="{{ highlight.listing_id }}">
+                          <label class="sr-only" for="qty-{{ highlight.listing_id }}">Quantity</label>
+                          <input id="qty-{{ highlight.listing_id }}"
+                                 name="quantity"
+                                 type="number"
+                                 min="1"
+                                 max="{{ highlight.quantity }}"
+                                 value="1"
+                                 class="form-control form-control-sm">
+                          <button type="submit" class="btn btn-sm btn-primary">Add to Cart</button>
+                        </form>
+                        {% else %}
+                          <a href="{{ url_for('users.login') }}" class="btn btn-outline-secondary btn-sm">Log in to add</a>
+                        {% endif %}
+                      {% else %}
+                        <span class="text-muted small">No active sellers.</span>
+                      {% endif %}
+                      <a href="{{ url_for('products.detail', product_id=product.id) }}" class="btn btn-link btn-sm p-0">View details →</a>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <button type="submit" class="btn btn-primary mb-2 ml-2">Search</button>
-  </form>
-  <div id="top-k-alert" class="text-danger mb-2"></div>
-  <div id="top-k-results"></div>
-</div>
-
-<br><br>
-
-{% if current_user.is_authenticated %}
-  <h2>View Your Cart</h2>
-  <button class="btn btn-primary mt-3"
-          onclick="window.location.href='/cart/{{ current_user.id }}'">
-    Go to My Cart
-  </button>
-
-{% else %}
-  <p>
-    <a href="{{ url_for('users.login') }}">Log in</a> to see your purchase history or view your cart.
-  </p>
-
-  <h2 class="mt-4">View Cart</h2>
-  <div class="input-group mb-3" style="max-width: 400px;">
-    <input id="userId" type="number" class="form-control" placeholder="Enter user ID">
-    <button class="btn btn-primary" type="button" onclick="viewCart()">View Cart</button>
   </div>
 
-  <script>
-    function viewCart() {
-      if (id) {
-        window.location.href = `/cart/0`;
-      } else {
-        alert('Please enter a valid user ID.');
-      }
-    }
-  </script>
-{% endif %}
-
-<br><br>
-
-{% if current_user.is_authenticated %}
-<h2>Your Inventory (Seller):</h2>
-{% if inventory %}
-<table class='table table-hover table-bordered container'>
-  <thead class="thead-dark">
-    <tr>
-      <th scope="col">Listing ID</th>
-      <th scope="col">Product Name</th>
-      <th scope="col">Base Price</th>
-      <th scope="col">Seller Price</th>
-      <th scope="col">Quantity</th>
-      <th scope="col">Active</th>
-      <th scope="col">Image</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for item in inventory %}
-      <tr>
-        <th scope="row">{{ item.listing_id }}</th>
-        <td>{{ item.product_name }}</td>
-        <td>${{ '%.2f'|format(item.base_price) }}</td>
-        <td>${{ '%.2f'|format(item.seller_price) }}</td>
-        <td>{{ item.quantity }}</td>
-        <td>{{ 'Yes' if item.is_active else 'No' }}</td>
-        <td>
-          {% if item.image_link %}
-            <a href="{{ item.image_link }}" target="_blank">
-              <img src="{{ item.image_link }}" alt="{{ item.product_name }}" style="width:100px; height:auto; border-radius:8px;">
-            </a>
-          {% else %}
-            <img src="https://via.placeholder.com/100?text=No+Image" alt="No image">
-          {% endif %}
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p>You currently have no inventory listed.</p>
-{% endif %}
-{% endif %}
+  <!-- Orders Tab -->
+  <div class="tab-pane fade" id="orders" role="tabpanel" aria-labelledby="orders-tab">
+    {% if current_user.is_authenticated %}
+      {% if orders %}
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="h6 mb-0 text-white">Your Recent Orders</h3>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for order in orders %}
+                        <tr style="cursor: pointer;" onclick='window.location.href={{ url_for("cart.order_detail", user_id=current_user.id, order_id=order.id) | tojson }}'>
+                          <td><strong>#{{ order.id }}</strong></td>
+                          <td>{{ order.created_at | friendly_datetime }}</td>
+                          <td>{{ order.item_count }} {{ 'item' if order.item_count == 1 else 'items' }}</td>
+                          <td>${{ '{:,.2f}'.format(order.total_amount) }}</td>
+                          <td>
+                            {% set status_class = 'order-placed' if order.fulfillment_status == 'Order Placed' else ('shipped' if order.fulfillment_status == 'Shipped' else 'delivered') %}
+                            <span class="status-pill {{ status_class }}">{{ order.fulfillment_status }}</span>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert">
+          <h4 class="alert-heading">No Orders Yet</h4>
+          <p>You haven't placed any orders. Start shopping by clicking the Shop tab!</p>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="alert alert-warning" role="alert">
+        <h4 class="alert-heading">Log In to View Orders</h4>
+        <p>Please <a href="{{ url_for('users.login') }}">log in</a> to see your orders.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
 
 <script src="{{ url_for('static', filename='js/products.js') }}"></script>
 
-
-<br><br>
-
-{% if current_user.is_authenticated %}
-<h2>Search Seller Inventory</h2>
-<form id="seller-search-form" onsubmit="redirectToSellerInventory(event)">
-  <div class="form-group">
-    <label for="seller-id">Seller ID:</label>
-    <input type="number" class="form-control" id="seller-id" placeholder="Enter Seller ID" required>
-  </div>
-  <button type="submit" class="btn btn-primary">Search</button>
-</form>
-
 <script>
-function redirectToSellerInventory(event) {
+  function redirectToSellerInventory(event) {
     event.preventDefault();
     const sellerId = document.getElementById('seller-id').value;
-    if(sellerId) {
-        window.location.href = `/sellers/${sellerId}/inventory`;
+    if (sellerId) {
+      window.location.href = `/sellers/${sellerId}/inventory`;
     }
-}
+  }
 </script>
-{% endif %}
-
 
 {% endblock %}

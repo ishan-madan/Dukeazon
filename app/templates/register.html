@@ -2,46 +2,273 @@
 
 {% block content %}
 
-<h1>Register</h1>
+<style>
+  .register-container {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
 
-<form action="" method="post">
-  {{ form.hidden_tag() }}
-  <p>
-    {{ form.firstname.label }}<br/>
-    {{ form.firstname(size=32) }}<br/>
-    {% for error in form.firstname.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.lastname.label }}<br/>
-    {{ form.lastname(size=32) }}<br/>
-    {% for error in form.lastname.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.email.label }} (Could be fake email address)<br/>
-    {{ form.email(size=64) }}<br/>
-    {% for error in form.email.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.password.label }}<br/>
-    {{ form.password(size=32) }}<br/>
-    {% for error in form.password.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.password2.label }}<br/>
-    {{ form.password2(size=32) }}<br/>
-    {% for error in form.password2.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>{{ form.submit() }}</p>
-</form>
+  h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #071330;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .role-selector {
+    margin: 30px 0;
+  }
+
+  .role-selector-label {
+    display: block;
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #071330;
+    text-align: center;
+  }
+
+  .pill-container {
+    display: flex;
+    gap: 20px;
+    position: relative;
+    background: #f0f0f0;
+    padding: 8px;
+    border-radius: 50px;
+    margin-bottom: 10px;
+  }
+
+  .pill-option {
+    flex: 1;
+    padding: 16px 24px;
+    text-align: center;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    border-radius: 45px;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+  }
+
+  .pill-option:hover {
+    color: #071330;
+  }
+
+  .pill-option:focus {
+    outline: none;
+  }
+
+  .pill-indicator {
+    position: absolute;
+    width: calc(50% - 10px);
+    height: calc(100% - 16px);
+    background: linear-gradient(135deg, #0f2e4d, #123d66);
+    border-radius: 45px;
+    top: 8px;
+    left: 8px;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  .pill-option.active {
+    color: white;
+  }
+
+  #user_type_1:checked ~ .pill-indicator {
+    left: calc(50% + 10px);
+  }
+
+  .hidden-radio {
+    display: none;
+  }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="email"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+  }
+
+  input[type="text"]:focus,
+  input[type="password"]:focus,
+  input[type="email"]:focus {
+    outline: none;
+    border-color: #0f2e4d;
+    box-shadow: 0 0 0 3px rgba(15, 46, 77, 0.1);
+  }
+  .uppercase-input {
+    text-transform: uppercase;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+  }
+
+  .register-submit {
+    margin-top: 24px;
+  }
+
+  .form-section {
+    margin-bottom: 25px;
+  }
+</style>
+
+<div class="register-container">
+  <h1>Create Account</h1>
+
+  <form action="" method="post" novalidate>
+    {{ form.hidden_tag() }}
+
+    <!-- Role Selection -->
+    <div class="role-selector">
+      <label class="role-selector-label">Select Account Type</label>
+      <div class="pill-container">
+        <!-- Hidden radio buttons -->
+        <input type="radio" name="user_type" class="hidden-radio" id="user_type_0" value="buyer" onchange="updatePillStyle()">
+        <input type="radio" name="user_type" class="hidden-radio" id="user_type_1" value="seller" onchange="updatePillStyle()">
+        
+        <!-- Visual pill buttons -->
+        <button type="button" class="pill-option active" onclick="document.getElementById('user_type_0').checked = true; updatePillStyle(); return false;">
+          Buyer
+        </button>
+        <button type="button" class="pill-option" onclick="document.getElementById('user_type_1').checked = true; updatePillStyle(); return false;">
+          Seller
+        </button>
+        <div class="pill-indicator"></div>
+      </div>
+      {% for error in form.user_type.errors %}
+        <span class="error">[{{ error }}]</span>
+      {% endfor %}
+    </div>
+
+    <!-- Personal Information -->
+    <div class="form-section">
+      <div class="form-group">
+        {{ form.firstname.label }}
+        {{ form.firstname(size=32) }}
+        {% for error in form.firstname.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.lastname.label }}
+        {{ form.lastname(size=32) }}
+        {% for error in form.lastname.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.street.label }}
+        {{ form.street(size=64) }}
+        {% for error in form.street.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.city.label }}
+        {{ form.city(size=32) }}
+        {% for error in form.city.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.state.label }}
+        {{ form.state(size=8, maxlength=2, class_='uppercase-input') }}
+        {% for error in form.state.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.zip_code.label }}
+        {{ form.zip_code(size=12) }}
+        {% for error in form.zip_code.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Account Information -->
+    <div class="form-section">
+      <div class="form-group">
+        {{ form.email.label }} <small>(Can be a fake email)</small>
+        {{ form.email(size=64) }}
+        {% for error in form.email.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.password.label }}
+        {{ form.password(size=32) }}
+        {% for error in form.password.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        {{ form.password2.label }}
+        {{ form.password2(size=32) }}
+        {% for error in form.password2.errors %}
+          <span class="error">[{{ error }}]</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    {{ form.submit(class_='btn-theme-primary btn-block register-submit') }}
+  </form>
+</div>
+
+<script>
+  function updatePillStyle() {
+    const buyerBtn = document.querySelectorAll('.pill-option')[0];
+    const sellerBtn = document.querySelectorAll('.pill-option')[1];
+    const buyerRadio = document.getElementById('user_type_0');
+    
+    if (buyerRadio.checked) {
+      buyerBtn.classList.add('active');
+      sellerBtn.classList.remove('active');
+    } else {
+      buyerBtn.classList.remove('active');
+      sellerBtn.classList.add('active');
+    }
+  }
+
+  // Initialize on page load - default to buyer
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('user_type_0').checked = true;
+    updatePillStyle();
+  });
+</script>
 
 {% endblock %}

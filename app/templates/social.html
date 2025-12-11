@@ -29,6 +29,7 @@
       <tr>
         <th>Category</th>
         <th>Item/Seller</th>
+        <th>Total Reviews</th>
         <th>Rating</th>
         <th>Comment</th>
         <th>Date</th>
@@ -39,6 +40,7 @@
         <tr>
           <td>{{ r.type }}</td>
           <td>{{ r.target_name or r.target_id }}</td>
+          <td>{{ r.target_review_count }}</td>
           <td>
             {% set stars = (r.rating|string)|int %}
             <span>
@@ -48,7 +50,9 @@
             <small>({{ r.rating }})</small>
           </td>
           <td>{{ r.body }}</td>
-          <td>{{ r.created_at }}</td>
+          <td>
+            {{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if r.created_at else '—' }}
+          </td>
         </tr>
       {% endfor %}
     </tbody>

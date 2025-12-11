@@ -6,69 +6,520 @@
   <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
   <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
   <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/aptos">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/example.css') }}">
   <style>
+    :root {
+      --misty-blue: #C3CEDA;
+      --blue-gray: #738FA7;
+      --midnight-blue: #0C4160;
+      --dark-blue: #071330;
+    }
+    html, body {
+      min-height: 100%;
+      background-color: #eef2f8;
+    }
     body {
-        font-family: "Lato", sans-serif;
+      font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef2f8 60%, #e4e8f0 100%);
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      background-size: cover;
+      color: var(--dark-blue);
     }
-
-    .main-head {
-        height: 150px;
-        background: #FFF;
+    .navbar {
+      background: linear-gradient(90deg, #0f2e4d, #123d66);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     }
-
-    .sidenav {
-        height: 100%;
-        background-color: #000;
-        overflow-x: hidden;
-        padding-top: 20px;
+    .navbar-brand-logo {
+      height: 32px;
+      width: 32px;
+      margin-right: 8px;
     }
-
-    .main {
-        padding: 0px 10px;
+    .navbar .navbar-brand,
+    .navbar .nav-link {
+      color: #fff;
     }
-
-    .login-main-text {
-        margin-top: 20%;
-        padding: 60px;
-        color: #fff;
+    .navbar .nav-link:hover {
+      color: var(--blue-gray);
     }
-
-    .login-main-text h2 {
-        font-weight: 300;
+    .navbar .dropdown-menu .dropdown-item {
+      color: var(--dark-blue);
     }
-
-    .btn-black {
-        background-color: #000 !important;
-        color: #fff;
+    .navbar .dropdown-menu .dropdown-item:hover {
+      color: #fff;
+      background-color: var(--blue-gray);
+    }
+    .content-wrapper {
+      padding: 2.5rem 2rem 3rem;
+      max-width: 1320px;
+      margin: 0 auto;
+    }
+    .card {
+      border: none;
+      background-color: #fff;
+      border-radius: 1.2rem;
+      box-shadow: 0 20px 45px rgba(7, 19, 48, 0.08);
+      overflow: hidden;
+    }
+    .card-header {
+      background-color: var(--midnight-blue);
+      color: #fff;
+      border-bottom: none;
+      border-top-left-radius: 0.6rem;
+      border-top-right-radius: 0.6rem;
+    }
+    .btn-primary {
+      background-color: var(--midnight-blue);
+      border-color: var(--midnight-blue);
+    }
+    .btn-primary:hover,
+    .btn-primary:focus {
+      background-color: var(--dark-blue);
+      border-color: var(--dark-blue);
+    }
+    .btn-outline-secondary {
+      color: var(--midnight-blue);
+      border-color: var(--midnight-blue);
+    }
+    .btn-outline-secondary:hover,
+    .btn-outline-secondary:focus {
+      background-color: var(--midnight-blue);
+      color: #fff;
+    }
+    .btn-theme-primary,
+    .btn-theme-ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      border-radius: 0.5rem;
+      padding: 0.85rem 1.5rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      text-decoration: none;
+      text-align: center;
+    }
+    .btn-theme-primary {
+      background: linear-gradient(135deg, #0f2e4d, #123d66);
+      color: #fff;
+      border: none;
+      box-shadow: 0 4px 10px rgba(15, 46, 77, 0.25);
+    }
+    .btn-theme-primary:hover,
+    .btn-theme-primary:focus {
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(15, 46, 77, 0.35);
+    }
+    .btn-theme-primary:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(15, 46, 77, 0.3);
+    }
+    .btn-theme-ghost {
+      background: rgba(255, 255, 255, 0.2);
+      color: var(--midnight-blue);
+      border: 2px solid var(--midnight-blue);
+      box-shadow: none;
+    }
+    .btn-theme-ghost:hover,
+    .btn-theme-ghost:focus {
+      background: rgba(12, 65, 96, 0.08);
+      color: var(--dark-blue);
+      transform: translateY(-1px);
+    }
+    .btn-theme-ghost:active {
+      transform: translateY(0);
+    }
+    a,
+    .nav-tabs .nav-link {
+      color: var(--blue-gray);
+    }
+    a:hover,
+    .nav-tabs .nav-link:hover,
+    .nav-tabs .nav-link.active {
+      color: var(--dark-blue);
+    }
+    .nav-tabs .nav-link.active {
+      border-color: var(--dark-blue);
+    }
+    .nav-tabs .tab-icon-link {
+      display: inline-flex;
+      align-items: center;
+      font-weight: 600;
+      gap: 0.35rem;
+    }
+    .tab-icon-link svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+    .tab-icon-link:hover svg {
+      transform: translateY(-1px);
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+    }
+    @media (max-width: 1280px) {
+      .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 992px) {
+      .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 600px) {
+      .product-grid { grid-template-columns: 1fr; }
+    }
+    .product-card {
+      border: none;
+      border-radius: 1rem;
+      background: #fff;
+      box-shadow: 0 20px 40px rgba(12, 65, 96, 0.08);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .product-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 30px 50px rgba(7, 19, 48, 0.14);
+    }
+    .product-media {
+      position: relative;
+      width: 100%;
+      padding-top: 110%;
+      background-size: cover;
+      background-position: center;
+    }
+    .product-badge {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(7, 19, 48, 0.85);
+      color: #fff;
+      font-size: 0.78rem;
+      letter-spacing: 0.03em;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+    .product-details {
+      padding: 1.2rem 1.4rem 1.3rem;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .product-category {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--blue-gray);
+      margin-bottom: 0.4rem;
+    }
+    .product-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: var(--dark-blue);
+    }
+    .product-title a {
+      color: inherit;
+    }
+    .product-description {
+      font-size: 0.88rem;
+      color: #5f6b7a;
+      margin-bottom: 0.6rem;
+      min-height: 38px;
+    }
+    .product-rating {
+      font-size: 0.85rem;
+      margin-bottom: 0.8rem;
+      color: #f5c518;
+    }
+    .product-price {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--midnight-blue);
+      margin-bottom: 0.8rem;
+    }
+    .product-actions {
+      margin-top: auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .seller-chip {
+      background: #eef2f7;
+      border-radius: 999px;
+      padding: 0.4rem 0.85rem;
+      font-size: 0.85rem;
+      color: var(--midnight-blue);
+    }
+    .product-form-inline {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .product-form-inline input[type="number"] {
+      width: 64px;
+    }
+    .product-form-inline .btn {
+      white-space: nowrap;
+    }
+    @media (max-width: 576px) {
+      .product-grid {
+        grid-template-columns: 1fr;
+      }
+      .product-form-inline {
+        width: 100%;
+      }
+      .product-form-inline input[type="number"] {
+        flex: 1;
+      }
+      .product-form-inline .btn {
+        flex: 1;
+      }
+    }
+    .pagination-modern {
+      display: inline-flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 999px;
+      box-shadow: inset 0 0 0 1px #d8e0ec;
+      overflow: hidden;
+    }
+    .pagination-modern .page-item {
+      margin: 0;
+    }
+    .pagination-modern .page-link {
+      border: none;
+      background: transparent;
+      color: var(--midnight-blue);
+      padding: 0.45rem 0.9rem;
+      font-weight: 600;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .pagination-modern .page-link:hover {
+      background: rgba(12, 65, 96, 0.1);
+      color: var(--dark-blue);
+    }
+    .pagination-modern .page-item.active .page-link {
+      background: var(--midnight-blue);
+      color: #fff;
+      border-radius: 999px;
+    }
+    .pagination-modern .page-item.disabled .page-link {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .hero-panel {
+      background: linear-gradient(135deg, #0c4160, #738fa7);
+      color: #fff;
+      border-radius: 1.4rem;
+      padding: 1.8rem 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      box-shadow: 0 20px 45px rgba(7, 19, 48, 0.18);
+      margin-bottom: 1.5rem;
+    }
+    .hero-panel .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      font-size: 0.75rem;
+      opacity: 0.85;
+    }
+    .hero-panel h1,
+    .hero-panel h2 {
+      color: #fff;
+    }
+    .hero-panel .muted {
+      color: rgba(255, 255, 255, 0.8);
+    }
+    .hero-total {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    .card-lift {
+      border-radius: 1.2rem;
+      border: none;
+      box-shadow: 0 18px 40px rgba(7, 19, 48, 0.08);
+    }
+    .table-modern thead {
+      background: #f2f5f9;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+    }
+    .table-modern th,
+    .table-modern td {
+      vertical-align: middle;
+      border-top: none;
+      padding: 1rem;
+    }
+    .table-modern tbody tr + tr {
+      border-top: 1px solid #edf0f6;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .status-pill-top {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .status-pill.success { background: rgba(46, 204, 113, 0.15); color: #1f8a4d; }
+    .status-pill.warning { background: rgba(255, 193, 7, 0.18); color: #a06b00; }
+    .status-pill.info { background: rgba(23, 162, 184, 0.18); color: #0b5c6b; }
+    /* Fulfillment status colors */
+    .status-pill.order-placed { background: rgba(128, 0, 128, 0.15); color: #6b0080; }
+    .status-pill.shipped { background: rgba(0, 123, 255, 0.15); color: #003d99; }
+    .status-pill.delivered { background: rgba(40, 167, 69, 0.15); color: #1f8a4d; }
+    .status-pill-top.order-placed { background: #e6d9f0; color: #6b0080; }
+    .status-pill-top.shipped { background: #d9ecf7; color: #003d99; }
+    .status-pill-top.delivered { background: #d4edda; color: #1f8a4d; }
+    .order-card {
+      border-radius: 1.1rem;
+      border: none;
+      padding: 1.5rem;
+      background: #fff;
+      box-shadow: 0 16px 34px rgba(7, 19, 48, 0.08);
+      margin-bottom: 1.2rem;
+    }
+    .order-card:hover {
+      transform: translateY(-4px);
+      transition: transform 0.2s ease;
+    }
+    .order-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.9rem;
+      color: #5f6b7a;
+    }
+    .order-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
     }
   </style>
 </head>
 
 <body>
-  <div class="sidenav">
-    {% block msg %}
-      <h1 style="color:aliceblue">Welcome to CompSci 316 Mini Amazon!</h1>
-      <div style="color: aliceblue; text-align: right; margin-bottom: 25px">
+  <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+    <a class="navbar-brand font-weight-bold text-white d-flex align-items-center" href="{{ url_for('index.index') }}">
+      <img src="{{ url_for('static', filename='img/duke-shield.svg') }}"
+           alt="Duke crest" class="navbar-brand-logo">
+      <span>Dukeazon</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNav" aria-controls="mainNav"
+            aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav ml-auto align-items-lg-center">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('index.index') }}">Home</a></li>
         {% if current_user.is_authenticated %}
-
-          Hello {{current_user.firstname}}! 
-          
-          <a href="{{ url_for('social.social_page') }}" type="button" class="btn btn-light">Reviews</a>
-          <br>
-          <a href="{{ url_for('users.purchases') }}" class="btn btn-light">Purchases</a>
-          <br>
-          <a href="{{ url_for('users.logout') }}" type="button" class="btn btn-light">Log out</a>
-
+          {% if current_user.is_seller %}
+            <!-- Seller Navigation Links -->
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('product_seller.seller_inventory', seller_id=current_user.id) }}">Inventory</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.seller_orders_view', seller_id=current_user.id) }}">Fulfillment</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('social.my_reviews') }}">Reviews</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('users.search_profiles') }}">Search Profiles</a></li>
+          {% else %}
+            <!-- Buyer Navigation Links -->
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.cart', user_id=current_user.id) }}">Cart</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.orders', user_id=current_user.id) }}">Orders</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('users.purchases') }}">All Purchases</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('social.my_reviews') }}">Reviews</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('social.social_page') }}">Recent Feedback</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('users.search_profiles') }}">Search Profiles</a></li>
+          {% endif %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
+             aria-haspopup="true" aria-expanded="false">
+            Hello {{ current_user.firstname }}!
+          </a>
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+            <a class="dropdown-item" href="{{ url_for('users.account') }}">My Account</a>
+            <a class="dropdown-item" href="{{ url_for('users.logout') }}">Log out</a>
+          </div>
+        </li>
         {% else %}
-          <a href="{{ url_for('users.login') }}" type="button" class="btn btn-light">Log in</a>
+        <li class="nav-item">
+          <a href="{{ url_for('users.login') }}" class="btn btn-primary">Log in</a>
+        </li>
         {% endif %}
-      </div>
-    {% endblock %}
+      </ul>
+    </div>
+  </nav>
+
+  {# Toast container: overlays content in top-right and auto-dismisses messages #}
+  <div id="toast-container" aria-live="polite" aria-atomic="true"
+       style="position: fixed; top: 1rem; right: 1rem; z-index: 2050;">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          {% set cls = 'info' %}
+          {% if category == 'success' %}
+            {% set cls = 'success' %}
+          {% elif category == 'warning' %}
+            {% set cls = 'warning' %}
+          {% elif category == 'error' or category == 'danger' %}
+            {% set cls = 'danger' %}
+          {% endif %}
+          <div class="toast-message alert alert-{{ cls }} alert-dismissible" role="alert"
+               style="display:none; min-width:260px; margin-bottom:0.6rem; box-shadow:0 6px 18px rgba(7,19,48,0.12);">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="mr-2">{{ message }}</div>
+              <button type="button" class="close ml-2" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
   </div>
-  <div class="main">
+
+  <div class="content-wrapper">
     {% block content %}{% endblock %}
   </div>
+
+  <script>
+    // Show flashed messages as toasts: fade in, then auto-dismiss after 10s.
+    (function() {
+      $(function() {
+        const $toasts = $('#toast-container .toast-message');
+        const DISPLAY_TIME_MS = 10000;
+        $toasts.each(function(i) {
+          const $t = $(this);
+          const showDelay = i * 150;
+          // stagger appearance
+          setTimeout(function() { $t.fadeIn(200); }, showDelay);
+          // auto-hide after 10s
+          const hide = function() { $t.fadeOut(300, function() { $(this).remove(); }); };
+          setTimeout(hide, DISPLAY_TIME_MS + showDelay);
+          // manual close
+          $t.find('.close').on('click', hide);
+        });
+      });
+    })();
+  </script>
 </body>
 
 </html>

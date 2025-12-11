@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mt-4 mb-3">My Purchases</h2>
+
+{% if purchases %}
+<table class="table table-striped mt-3">
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Qty</th>
+      <th>Fulfillment</th>
+      <th>Purchased At</th>
+      <th>Order</th>
+    </tr>
+  </thead>
+
+<form method="get" class="form-inline mb-3">
+  <input 
+    type="text" 
+    name="q" 
+    class="form-control mr-2"
+    placeholder="Search purchases by product..."
+    value="{{ q or '' }}"
+  >
+  <button type="submit" class="btn btn-primary">Filter</button>
+
+  {% if q %}
+    <a href="{{ url_for('users.purchases') }}" class="btn btn-secondary ml-2">Clear</a>
+  {% endif %}
+</form>
+
+  <tbody>
+  {% for p in purchases %}
+    <tr>
+      <td>{{ p.product_name }}</td>
+      <td>{{ p.quantity }}</td>
+      <td>
+        {% set status_class = 'order-placed' if p.fulfillment_status == 'Order Placed' else ('shipped' if p.fulfillment_status == 'Shipped' else 'delivered') %}
+        <span class="status-pill {{ status_class }}">{{ p.fulfillment_status }}</span>
+      </td>
+      <td>{{ p.order_date | friendly_datetime }}</td>
+      <td>
+        <a href="{{ url_for('cart.order_detail',
+                             user_id=current_user.id,
+                             order_id=p.order_id) }}"
+           class="btn btn-primary btn-sm">
+          View Order #{{ p.order_id }}
+        </a>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p>You haven't purchased anything yet.</p>
+{% endif %}
+
+{% endblock %}

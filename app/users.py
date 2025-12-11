@@ -1,16 +1,65 @@
 from flask import render_template, redirect, url_for, flash, request
-from werkzeug.urls import url_parse
+from urllib.parse import urlparse as url_parse
 from flask_login import login_user, logout_user, current_user
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField
-from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, RadioField
+from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length, Regexp
+from flask import current_app as app
+from .models.product_review import SellerReview
 
 from .models.user import User
+from .models.subscription import Subscription
 
 
 from flask import Blueprint
 bp = Blueprint('users', __name__)
 
+def format_full_address(street, city, state, zip_code):
+    def clean(value):
+        return (value or '').strip()
+    street = clean(street)
+    city = clean(city)
+    state = clean(state).upper()
+    zip_code = clean(zip_code)
+    parts = []
+    if street:
+        parts.append(street)
+    if city:
+        parts.append(city)
+    state_zip = ' '.join([part for part in (state, zip_code) if part])
+    if state_zip:
+        parts.append(state_zip)
+    return ', '.join(parts)
+
+
+def parse_address(address):
+    result = {'street': '', 'city': '', 'state': '', 'zip_code': ''}
+    if not address:
+        return result
+    segments = [seg.strip() for seg in address.split(',') if seg.strip()]
+    if not segments:
+        return result
+    state_zip_segment = ''
+    if len(segments) >= 3:
+        result['street'] = ', '.join(segments[:-2])
+        result['city'] = segments[-2]
+        state_zip_segment = segments[-1]
+    elif len(segments) == 2:
+        result['street'] = segments[0]
+        possible = segments[1]
+        tokens = possible.split()
+        if len(tokens) >= 2 and len(tokens[0]) == 2:
+            state_zip_segment = possible
+        else:
+            result['city'] = possible
+    else:
+        result['street'] = segments[0]
+    tokens = state_zip_segment.split()
+    if tokens:
+        result['state'] = tokens[0].upper()
+        if len(tokens) > 1:
+            result['zip_code'] = ' '.join(tokens[1:])
+    return result
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -42,10 +91,18 @@ class RegistrationForm(FlaskForm):
     firstname = StringField('First Name', validators=[DataRequired()])
     lastname = StringField('Last Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
+    street = StringField('Street Address', validators=[DataRequired()])
+    city = StringField('City', validators=[DataRequired()])
+    state = StringField('State', validators=[DataRequired(), Length(min=2, max=2, message='Use 2-letter state code.')])
+    zip_code = StringField('ZIP Code', validators=[
+        DataRequired(),
+        Regexp(r'^\d{5}(?:-\d{4})?$', message='Enter a valid ZIP code (##### or #####-####).')
+    ])
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
-        'Repeat Password', validators=[DataRequired(),
+        'Confirm Password', validators=[DataRequired(),
                                        EqualTo('password')])
+    user_type = RadioField('Account Type', choices=[('buyer', 'Buyer'), ('seller', 'Seller')], validators=[DataRequired()])
     submit = SubmitField('Register')
 
     def validate_email(self, email):
@@ -59,11 +116,18 @@ def register():
         return redirect(url_for('index.index'))
     form = RegistrationForm()
     if form.validate_on_submit():
+        is_seller = form.user_type.data == 'seller'
+        address = format_full_address(form.street.data,
+                                      form.city.data,
+                                      form.state.data,
+                                      form.zip_code.data)
         if User.register(form.email.data,
                          form.password.data,
                          form.firstname.data,
-                         form.lastname.data):
-            flash('Congratulations, you are now a registered user!')
+                         form.lastname.data,
+                         address,
+                         is_seller=is_seller):
+            flash('Registration Successful. Please login to access your account', 'success')
             return redirect(url_for('users.login'))
     return render_template('register.html', title='Register', form=form)
 
@@ -76,13 +140,178 @@ def logout():
 
 from flask_login import login_required
 from .models.purchase import Purchase
+from .models.order import Order
 
 @bp.route('/purchases')
 @login_required
 def purchases():
-    """Show current user's purchase history."""
-    purchases = Purchase.get_all_detailed_by_uid(current_user.id)
-    return render_template('user_purchases.html',
-                           title='My Purchases',
-                           purchases=purchases,
-                           user=current_user)
+    q = request.args.get("q")  # GET parameter ?q=abc
+    purchases = Order.get_user_purchases(current_user.id, q=q)
+    
+    return render_template(
+        'purchases.html',
+        title="My Purchases",
+        purchases=purchases,
+        q=q
+    )
+
+class UpdateAccountForm(FlaskForm):
+    firstname = StringField('First Name', validators=[DataRequired()])
+    lastname = StringField('Last Name', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    street = StringField('Street Address', validators=[DataRequired()])
+    city = StringField('City', validators=[DataRequired()])
+    state = StringField('State', validators=[DataRequired(), Length(min=2, max=2, message='Use 2-letter state code.')])
+    zip_code = StringField('ZIP Code', validators=[
+        DataRequired(),
+        Regexp(r'^\d{5}(?:-\d{4})?$', message='Enter a valid ZIP code (##### or #####-####).')
+    ])
+    submit = SubmitField('Update')
+
+    def validate_email(self, email):
+                                  
+        if email.data != current_user.email and User.email_exists(email.data):
+            raise ValidationError('A user with this email already exists.')
+
+class BalanceForm(FlaskForm):
+    amount = StringField('Amount', validators=[DataRequired()])
+    submit_add = SubmitField('Add Funds')
+    submit_withdraw = SubmitField('Withdraw Funds')
+
+@bp.route('/account', methods=['GET', 'POST'])
+@login_required
+def account():
+    update_form = UpdateAccountForm()
+    balance_form = BalanceForm()
+    subscriptions = Subscription.get_active_by_user(current_user.id)
+    address_parts = parse_address(current_user.address)
+
+                                             
+    if request.method == 'GET':
+        update_form.firstname.data = current_user.firstname
+        update_form.lastname.data = current_user.lastname
+        update_form.email.data = current_user.email
+        update_form.street.data = address_parts['street']
+        update_form.city.data = address_parts['city']
+        update_form.state.data = address_parts['state']
+        update_form.zip_code.data = address_parts['zip_code']
+
+                                         
+    if update_form.submit.data:
+        if update_form.validate_on_submit():
+            formatted_address = format_full_address(
+                update_form.street.data,
+                update_form.city.data,
+                update_form.state.data,
+                update_form.zip_code.data
+            )
+            User.update_account(
+                uid=current_user.id,
+                firstname=update_form.firstname.data,
+                lastname=update_form.lastname.data,
+                email=update_form.email.data,
+                address=formatted_address
+            )
+            current_user.address = formatted_address
+            flash('Your account information has been updated.')
+        else:
+            for field_errors in update_form.errors.values():
+                for err in field_errors:
+                    flash(err, 'danger')
+        return redirect(url_for('users.account'))
+
+                            
+    if balance_form.validate_on_submit():
+        try:
+            amount = float(balance_form.amount.data)
+        except ValueError:
+            flash('Please enter a numeric amount.', 'danger')
+            return redirect(url_for('users.account'))
+        if amount <= 0:
+            flash('Amount must be positive.', 'danger')
+            return redirect(url_for('users.account'))
+
+            if balance_form.submit_add.data and amount > 10000:
+                flash('You can only add up to $10,000 at a time.', 'danger')
+                return redirect(url_for('users.account'))
+                   
+        MAX_DEPOSIT = 10000
+        if balance_form.submit_add.data:
+            if amount > MAX_DEPOSIT:
+                flash(f'Deposits are limited to ${MAX_DEPOSIT:,.0f} per transaction.', 'danger')
+                return redirect(url_for('users.account'))
+            User.add_balance(current_user.id, amount)
+            flash(f'Added ${amount:.2f} to your balance.')
+
+                        
+        if balance_form.submit_withdraw.data:
+            if amount > current_user.balance:
+                flash('Not enough balance to withdraw.')
+            else:
+                User.withdraw_balance(current_user.id, amount)
+                flash(f'Withdrew ${amount:.2f}.')
+
+        return redirect(url_for('users.account'))
+
+    return render_template('account.html',
+                           update_form=update_form,
+                           balance_form=balance_form,
+                           user=current_user,
+                           subscriptions=subscriptions,
+                           address_display=format_full_address(
+                               address_parts['street'],
+                               address_parts['city'],
+                               address_parts['state'],
+                               address_parts['zip_code']
+                           ))
+
+
+@bp.route('/subscriptions/<int:subscription_id>/cancel', methods=['POST'])
+@login_required
+def cancel_subscription(subscription_id):
+    if Subscription.cancel(subscription_id, current_user.id):
+        flash('Subscription canceled.', 'success')
+    else:
+        flash('Unable to cancel that subscription.', 'danger')
+    return redirect(url_for('users.account'))
+
+@bp.route('/user/<int:user_id>')
+def public_profile(user_id):
+    user = User.get(user_id)
+    if not user:
+        flash("User not found.")
+        return redirect(url_for('index.index'))
+
+    if user.is_seller:
+        reviews = SellerReview.get_for_seller(user_id)
+        return render_template('seller_profile.html', user=user, reviews=reviews)
+    else:
+        return render_template('user_profile.html', user=user)
+
+@bp.route('/search_profiles', methods=['GET', 'POST'])
+def search_profiles():
+    query = request.args.get('q', '')  # text from search bar
+    results = []
+
+    if query:
+        # Search by first or last name (case-insensitive)
+        rows = app.db.execute("""
+            SELECT id, email, firstname, lastname, address, balance, is_seller
+            FROM Users
+            WHERE LOWER(firstname) LIKE LOWER(:q)
+               OR LOWER(lastname) LIKE LOWER(:q)
+        """, q=f"%{query}%")
+        
+        grouped = {}
+        for row in rows:
+            candidate = User(*row)
+            key = (candidate.firstname or '').strip().lower(), (candidate.lastname or '').strip().lower()
+            existing = grouped.get(key)
+            if not existing:
+                grouped[key] = candidate
+            else:
+                if not existing.is_seller and candidate.is_seller:
+                    grouped[key] = candidate
+        results = sorted(grouped.values(), key=lambda u: ((u.firstname or '').lower(), (u.lastname or '').lower()))
+
+    return render_template('search_profiles.html', query=query, results=results)

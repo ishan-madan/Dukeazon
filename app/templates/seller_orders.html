@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Order Fulfillment</h1>
+    <a href="{{ url_for('cart.cart', user_id=seller_id) }}" class="btn btn-secondary">Back to Cart</a>
+  </div>
+
+  <div class="mb-3 d-flex justify-content-between align-items-center">
+    <form class="form-inline" method="get" action="{{ url_for('cart.seller_orders_view', seller_id=seller_id) }}">
+      <div class="form-group mr-2">
+        <input type="text" name="q" value="{{ q or '' }}" class="form-control" placeholder="Search by order # or buyer">
+      </div>
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+    <div>
+      <a href="{{ url_for('cart.seller_orders_view', seller_id=seller_id) }}" class="btn btn-outline-secondary">Clear</a>
+    </div>
+  </div>
+
+  {% if orders %}
+    {% for order in orders %}
+    {% set status_ns = namespace(value='Order Placed') %}
+    {% for itm in order.items %}
+      {% set computed = itm.fulfillment_status if itm.fulfillment_status is defined else ('Delivered' if itm.fulfilled else 'Order Placed') %}
+      {% if computed == 'Delivered' %}
+        {% set status_ns.value = 'Delivered' %}
+      {% elif computed == 'Shipped' and status_ns.value != 'Delivered' %}
+        {% set status_ns.value = 'Shipped' %}
+      {% endif %}
+    {% endfor %}
+    {% set header_status = status_ns.value %}
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+          <strong>Order #{{ order.order_id }}</strong>
+          <div class="small text-muted">Placed: {{ order.order_created_at | friendly_datetime }}</div>
+        </div>
+        <div class="text-right">
+          <div class="mb-1"><strong>Total:</strong> ${{ '{:,.2f}'.format(order.order_total) }}</div>
+          <div class="small text-muted mb-2">Items in order: {{ order.order_total_items }}</div>
+          <div>
+            {% if header_status == 'Delivered' %}
+              <span class="badge badge-success text-uppercase">Delivered</span>
+            {% elif header_status == 'Shipped' %}
+              <span class="badge badge-primary text-uppercase">Shipped</span>
+            {% else %}
+              <span class="badge badge-warning text-uppercase">Order Placed</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <strong>Buyer:</strong> {{ order.buyer_name }}<br/>
+          <strong>Address:</strong> {{ order.buyer_address }}
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in order.items %}
+              <tr>
+                <td>{{ item.product_name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ "{:,.2f}".format(item.subtotal) }}</td>
+                <td>
+                  <div>
+                    {% set status = item.fulfillment_status if item.fulfillment_status is defined else ( 'Delivered' if item.fulfilled else 'Order Placed') %}
+                    {% if status == 'Delivered' %}
+                      <span class="badge" style="background-color:#28a745;color:#fff;">Delivered</span>
+                    {% elif status == 'Shipped' %}
+                      <span class="badge" style="background-color:#007bff;color:#fff;">Shipped</span>
+                    {% else %}
+                      <span class="badge" style="background-color:#6A0DAD;color:#fff;">Order Placed</span>
+                    {% endif %}
+                    {% if item.fulfilled_at %}
+                      <div class="small text-muted">{{ item.fulfilled_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') }}</div>
+                    {% endif %}
+                  </div>
+                </td>
+                <td>
+                  <form method="post" action="{{ url_for('cart.update_item_status', seller_id=seller_id, item_id=item.item_id) }}">
+                    <div class="input-group input-group-sm">
+                      <select name="status" class="form-control form-control-sm">
+                        <option value="Order Placed" {% if status == 'Order Placed' %}selected{% endif %}>Order Placed</option>
+                        <option value="Shipped" {% if status == 'Shipped' %}selected{% endif %}>Shipped</option>
+                        <option value="Delivered" {% if status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                      </select>
+                      <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit">Save</button>
+                      </div>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-info">No order items to fulfill.</div>
+  {% endif %}
+</div>
+{% endblock %}

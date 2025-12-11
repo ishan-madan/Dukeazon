@@ -1,44 +1,210 @@
 {% extends "base.html" %}
+
 {% block content %}
 <h2 class="mt-4 mb-3">Seller Inventory</h2>
 
-{% if inventory %}
-  <table class="table table-striped mt-3">
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Image</th>
-        <th>Base Price</th>
-        <th>Seller Price</th>
-        <th>Quantity</th>
-        <th>Active</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in inventory %}
-      <tr>
-        <td>{{ item.product_name }}</td>
-        <td>
-          {% if item.image_link %}
-            <a href="{{ item.image_link }}" target="_blank">
-              <img src="{{ item.image_link }}" alt="{{ item.product_name }}"
-                   style="width:100px; height:auto; border-radius:8px;">
-            </a>
-          {% else %}
-            <img src="https://via.placeholder.com/100?text=No+Image" alt="No image">
-          {% endif %}
-        </td>
-        <td>${{ '%.2f'|format(item.base_price) }}</td>
-        <td>${{ '%.2f'|format(item.seller_price) }}</td>
-        <td>{{ item.quantity }}</td>
-        <td>{{ 'Yes' if item.is_active else 'No' }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p>This seller has no inventory.</p>
+{% if analytics %}
+  <!-- Analytics Summary -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card text-white bg-info">
+        <div class="card-body">
+          <h5 class="card-title">Total Units Sold (All time)</h5>
+          <p class="card-text display-4">{{ analytics.totals_all.units }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-white bg-success">
+        <div class="card-body">
+          <h5 class="card-title">Units Sold (Last 30 days)</h5>
+          <p class="card-text display-4">{{ analytics.totals_recent.units }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-white bg-secondary">
+        <div class="card-body">
+          <h5 class="card-title">Revenue (Last 30 days)</h5>
+          <p class="card-text display-4">${{ '{:,.2f}'.format(analytics.totals_recent.revenue) }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top products chart -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Top Products (Last 30 days)</h5>
+    </div>
+    <div class="card-body">
+      <canvas id="topProductsChart" width="400" height="120"
+              data-labels='{{ analytics.top_products | map(attribute="product_name") | list | tojson | safe }}'
+              data-values='{{ analytics.top_products | map(attribute="units_sold") | list | tojson | safe }}'>
+      </canvas>
+    </div>
+  </div>
 {% endif %}
 
-<a href="{{ url_for('index.index') }}" class="btn btn-primary mt-3">Back Home</a>
+<!-- Add Product Form -->
+<div class="card mb-4">
+  <div class="card-header bg-primary text-white">
+    <h5 class="mb-0">Add Product to Inventory</h5>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('product_seller.add_product', seller_id=seller_id) }}">
+      {{ add_form.hidden_tag() }}
+      <div class="form-row">
+        <div class="form-group col-md-4">
+          {{ add_form.product_id.label }}
+          <select name="product_id" class="form-control" required>
+            {% for value, label in add_form.product_id.choices %}
+              {% if value.startswith('category_') %}
+                <option value="{{ value }}" disabled style="color: #999; font-weight: bold;">{{ label }}</option>
+              {% else %}
+                <option value="{{ value }}" {% if add_form.product_id.data == value %}selected{% endif %}>{{ label }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          {% for error in add_form.product_id.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+          {% endfor %}
+        </div>
+        <div class="form-group col-md-4">
+          {{ add_form.price.label }}
+          {{ add_form.price(class="form-control") }}
+          {% for error in add_form.price.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+          {% endfor %}
+        </div>
+        <div class="form-group col-md-4">
+          {{ add_form.quantity.label }}
+          {{ add_form.quantity(class="form-control") }}
+          {% for error in add_form.quantity.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="form-group d-flex justify-content-between align-items-center">
+        <a href="{{ url_for('products.new') }}" class="btn btn-outline-primary">Create New Product</a>
+        {{ add_form.submit(class="btn btn-primary", value="Add to Inventory") }}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Inventory Table -->
+{% if inventory %}
+  <div class="table-responsive">
+    <table class="table table-striped table-hover mt-3">
+      <thead class="thead-dark">
+        <tr>
+          <th>Product</th>
+          <th>Image</th>
+          <th>Base Price</th>
+          <th>Your Price</th>
+          <th>Quantity</th>
+          <th>Active</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in inventory %}
+        <tr>
+          <td>{{ item.product_name }}</td>
+          <td>
+            {% if item.image_link %}
+              <a href="{{ item.image_link }}" target="_blank">
+                <img src="{{ item.image_link }}" alt="{{ item.product_name }}"
+                     style="width:100px; height:auto; border-radius:8px;">
+              </a>
+            {% else %}
+              <img src="https://via.placeholder.com/100?text=No+Image" alt="No image">
+            {% endif %}
+          </td>
+          <td>${{ '{:,.2f}'.format(item.base_price) }}</td>
+          <td>${{ '{:,.2f}'.format(item.seller_price) }}</td>
+          <td>
+            <!-- Update Quantity Form (Inline) -->
+            <form method="post" 
+                  action="{{ url_for('product_seller.update_product', seller_id=current_user.id, listing_id=item.listing_id) }}"
+                  style="display:inline-block;">
+              {{ add_form.csrf_token }}
+              <input type="number" name="quantity" value="{{ item.quantity }}" 
+                     min="0" class="form-control" style="width: 80px; display:inline-block;">
+              <button type="submit" class="btn btn-sm btn-info">Update</button>
+            </form>
+          </td>
+          <td>
+            <span class="badge {% if item.is_active %}badge-success{% else %}badge-secondary{% endif %}">
+              {{ 'Active' if item.is_active else 'Inactive' }}
+            </span>
+          </td>
+          <td>
+            <!-- Remove Product Form -->
+            <form method="post"
+                  action="{{ url_for('product_seller.remove_product', seller_id=current_user.id, listing_id=item.listing_id) }}"
+                  style="display:inline;">
+              {{ add_form.csrf_token }}
+              {% if item.is_active %}
+                <button type="submit" class="btn btn-sm btn-danger" 
+                        onclick="return confirm('Remove this product from inventory?');">Remove</button>
+              {% else %}
+                <button type="submit" class="btn btn-sm btn-success" 
+                        onclick="return confirm('Re-list this product?');">Re-list</button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="alert alert-info">
+    <p>You have no products in your inventory yet. Add one using the form above!</p>
+  </div>
+{% endif %}
+
+<a href="{{ url_for('index.index') }}" class="btn btn-secondary mt-3">Back Home</a>
+
+{% if analytics %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    (function(){
+      try {
+        const ctx = document.getElementById('topProductsChart');
+        if (!ctx) return;
+        // Read JSON-encoded data from data-* attributes to avoid breaking JS linters
+        const labels = JSON.parse(ctx.getAttribute('data-labels') || '[]');
+        const data = JSON.parse(ctx.getAttribute('data-values') || '[]');
+
+        new Chart(ctx.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Units sold',
+              backgroundColor: '#4e73df',
+              data: data
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { beginAtZero: true }
+            },
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+      } catch (e) {
+        console.error('Chart render error', e);
+      }
+    })();
+  </script>
+{% endif %}
+
 {% endblock %}

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>My Reviews</h2>
+
+<form class="form-inline mb-3">
+  <div class="form-group mr-2">
+    <label class="mr-1">Type</label>
+    {% set cur_type = filter_type or 'all' %}
+    <select name="type" class="form-control form-control-sm">
+      <option value="all" {% if cur_type == 'all' %}selected{% endif %}>All</option>
+      <option value="product" {% if cur_type == 'product' %}selected{% endif %}>Products</option>
+      <option value="seller" {% if cur_type == 'seller' %}selected{% endif %}>Sellers</option>
+    </select>
+  </div>
+  <div class="form-group mr-2">
+    <label class="mr-1">Min stars</label>
+    {% set cur_stars = filter_min_rating %}
+    <select name="stars" class="form-control form-control-sm">
+      <option value="" {% if not cur_stars %}selected{% endif %}>Any</option>
+      {% for s in range(5,0,-1) %}
+      <option value="{{ s }}" {% if cur_stars == s %}selected{% endif %}>{{ s }}+</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-sm btn-outline-primary">Apply</button>
+</form>
+
+<h3>Product reviews</h3>
+{% if product_reviews %}
+<table class="table table-hover table-bordered container">
+  <thead class="thead-dark">
+    <tr>
+      <th>Product</th>
+      <th>Rating</th>
+      <th>Comment</th>
+      <th>Date</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in product_reviews %}
+    <tr>
+      <td>{{ r.product_name }}</td>
+      <td>
+        {% for _ in range(r.rating) %}&#9733;{% endfor %}
+        {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
+        <small>{{ "%.1f"|format(r.rating) if r.rating % 1 else r.rating }}</small>
+        <div class="text-muted small">
+          {{ r.total_reviews_for_product }} review{{ 's' if r.total_reviews_for_product != 1 else '' }}
+        </div>
+      </td>
+      <td>{{ r.body }}</td>
+      <td>
+        {{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if r.created_at else '—' }}
+      </td>
+      <td>
+        <a href="{{ url_for('social.product_review', product_id=r.product_id) }}"
+           class="btn btn-sm btn-outline-primary">
+          Edit
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>You have not written any product reviews yet.</p>
+{% endif %}
+
+<hr>
+
+<h3>Seller reviews</h3>
+{% if seller_reviews %}
+<table class="table table-hover table-bordered container">
+  <thead class="thead-dark">
+    <tr>
+      <th>Seller</th>
+      <th>Rating</th>
+      <th>Comment</th>
+      <th>Date</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in seller_reviews %}
+    <tr>
+      <td>{{ r.firstname }} {{ r.lastname }}</td>
+      <td>
+        {% for _ in range(r.rating) %}&#9733;{% endfor %}
+        {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
+        <small>{{ "%.1f"|format(r.rating) if r.rating % 1 else r.rating }}</small>
+        <div class="text-muted small">
+          {{ r.total_reviews_for_seller }} review{{ 's' if r.total_reviews_for_seller != 1 else '' }}
+        </div>
+      </td>
+      <td>{{ r.body }}</td>
+      <td>
+        {{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if r.created_at else '—' }}
+      </td>
+      <td>
+        <a href="{{ url_for('social.seller_review', seller_id=r.seller_id) }}"
+           class="btn btn-sm btn-outline-primary">
+          Edit
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>You have not written any seller reviews yet.</p>
+{% endif %}
+
+{% if current_user.is_seller %}
+<hr>
+<h3>What customers say about you</h3>
+{% if seller_feedback %}
+<table class="table table-hover table-bordered container">
+  <thead class="thead-dark">
+    <tr>
+      <th>Reviewer</th>
+      <th>Rating</th>
+      <th>Comment</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in seller_feedback %}
+    <tr>
+      <td>{{ r.firstname }} {{ r.lastname }}</td>
+      <td>
+        {% for _ in range(r.rating) %}&#9733;{% endfor %}
+        {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
+        <small>{{ r.rating }}</small>
+      </td>
+      <td>{{ r.body }}</td>
+      <td>{{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if r.created_at else '—' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No one has reviewed your seller account yet.</p>
+{% endif %}
+{% endif %}
+
+{% endblock %}

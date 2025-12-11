@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Review seller: {{ seller.firstname }} {{ seller.lastname }}</h2>
+
+{% if rating_summary and rating_summary.num_reviews > 0 %}
+<p>
+  <strong>Average rating:</strong>
+  {% set stars = (rating_summary.avg_rating or 0)|round(0, 'floor')|int %}
+  {% for _ in range(stars) %}&#9733;{% endfor %}
+  {% for _ in range(5 - stars) %}&#9734;{% endfor %}
+  <small>
+    {{ "%.2f"|format(rating_summary.avg_rating) }} avg •
+    {{ rating_summary.num_reviews }} review{{ 's' if rating_summary.num_reviews != 1 else '' }}
+  </small>
+</p>
+{% else %}
+<p>No seller reviews yet.</p>
+{% endif %}
+
+{% if eligible %}
+<h3>Your review</h3>
+<form method="post">
+  <div class="form-group">
+    <label for="rating">Rating (1–5)</label>
+    <select class="form-control" id="rating" name="rating" required>
+      {% for r in range(1, 6) %}
+      <option value="{{ r }}" {% if user_review and user_review.rating == r %}selected{% endif %}>
+        {{ r }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="body">Comment</label>
+    <textarea class="form-control" id="body" name="body" rows="3" required>{% if user_review %}{{ user_review.body }}{% endif %}</textarea>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Save review</button>
+  {% if user_review %}
+  <button type="submit" name="delete" value="1"
+          class="btn btn-danger ml-2"
+          onclick="return confirm('Delete your review?');">
+    Delete review
+  </button>
+  {% endif %}
+</form>
+{% else %}
+<div class="alert alert-info mt-3">
+  You can only review sellers you have purchased from.
+</div>
+{% endif %}
+
+<hr>
+
+<h3>All reviews for this seller</h3>
+{% if all_reviews %}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Rating</th>
+      <th>Comment</th>
+      <th>Helpful</th>
+      <th>Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in all_reviews %}
+    <tr>
+      <td>{{ r.firstname }} {{ r.lastname }}</td>
+      <td>
+        {% for _ in range(r.rating) %}&#9733;{% endfor %}
+        {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
+        <small>({{ r.rating }})</small>
+      </td>
+      <td>
+        {{ r.body }}
+        {% if r.helpful_rank and r.helpful_rank <= 3 and r.helpful_count > 0 %}
+          <span class="badge badge-info ml-2">Most helpful</span>
+        {% endif %}
+      </td>
+      <td>
+        <div class="d-flex align-items-center">
+          {% if current_user.is_authenticated %}
+          <form method="post" action="{{ url_for('social.toggle_helpful_vote') }}" class="mr-2">
+            <input type="hidden" name="review_type" value="seller">
+            <input type="hidden" name="review_id" value="{{ r.seller_review_id }}">
+            <input type="hidden" name="next" value="{{ request.full_path }}">
+            {% if r.user_voted %}
+              <input type="hidden" name="action" value="remove">
+              <button type="submit" class="btn btn-sm btn-outline-secondary">
+                Helpful ({{ r.helpful_count }}) ✓
+              </button>
+            {% else %}
+              <button type="submit" class="btn btn-sm btn-outline-success">
+                Helpful ({{ r.helpful_count }})
+              </button>
+            {% endif %}
+          </form>
+          {% else %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('users.login', next=request.full_path) }}">
+              Helpful ({{ r.helpful_count }})
+            </a>
+          {% endif %}
+        </div>
+      </td>
+      <td>
+        {{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if r.created_at else '—' }}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No reviews yet.</p>
+{% endif %}
+
+{% endblock %}

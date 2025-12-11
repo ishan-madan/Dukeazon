@@ -2,37 +2,97 @@
 
 {% block content %}
 
-<h1>Login</h1>
+<style>
+  .login-container {
+    max-width: 400px;
+    margin: 60px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
 
-<form action="" method="post" novalidate>
-  {{ form.hidden_tag() }}
-  <p>
-    {{ form.email.label }}<br/>
-    {{ form.email(size=32) }}<br/>
-    {% for error in form.email.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.password.label }}<br/>
-    {{ form.password(size=32) }}<br/>
-    {% for error in form.password.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    <ul>
-      {% for message in messages %}
-      <li>{{ message }}</li>
+  .login-container h1 {
+    color: #071330;
+    margin-bottom: 30px;
+    text-align: center;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .form-group input[type="email"],
+  .form-group input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+  }
+
+  .form-group input[type="email"]:focus,
+  .form-group input[type="password"]:focus {
+    outline: none;
+    border-color: #0f2e4d;
+    box-shadow: 0 0 0 3px rgba(15, 46, 77, 0.1);
+  }
+
+  .error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .button-group .btn-theme-primary,
+  .button-group .btn-theme-ghost {
+    flex: 1 1 0;
+  }
+</style>
+
+<div class="login-container">
+  <h1>Sign In</h1>
+
+  <form action="" method="post" novalidate>
+    {{ form.hidden_tag() }}
+    
+    <div class="form-group">
+      {{ form.email.label }}
+      {{ form.email(size=32, type='email') }}
+      {% for error in form.email.errors %}
+        <span class="error">[{{ error }}]</span>
       {% endfor %}
-    </ul>
-    {% endif %}
-    {% endwith %}
-  </p>
-  {{ form.submit(class_="btn btn-black") }}
-  <a class="btn btn-secondary" href="{{ url_for('users.register') }}" role="button">Register</a>
-</form>
+    </div>
+
+    <div class="form-group">
+      {{ form.password.label }}
+      {{ form.password(size=32) }}
+      {% for error in form.password.errors %}
+        <span class="error">[{{ error }}]</span>
+      {% endfor %}
+    </div>
+
+    <div class="button-group">
+      {{ form.submit(class_="btn-theme-primary") }}
+      <a href="{{ url_for('users.register') }}" class="btn-theme-ghost" role="button">Register</a>
+    </div>
+  </form>
+</div>
 
 {% endblock %}
