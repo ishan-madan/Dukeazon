@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Seller Profile</h2>
+
+<p><strong>Name:</strong> {{ user.firstname }} {{ user.lastname }}</p>
+<p><strong>Seller Email:</strong> {{ user.email }}</p>
+<p><strong>Seller Address:</strong> {{ user.address }}</p>
+
+<h3>Reviews</h3>
+<ul>
+    {% for review in reviews %}
+    <li>
+        Rating: {{ review.rating }} — "{{ review.body }}"
+    </li>
+    {% else %}
+    <li>No reviews yet.</li>
+    {% endfor %}
+</ul>
+
+{% endblock %}
