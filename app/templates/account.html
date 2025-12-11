@@ -1,72 +1,159 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>My Account</h2>
+{% set role_label = 'Seller' if user.is_seller else 'Buyer' %}
+{% set role_class = 'seller' if user.is_seller else 'buyer' %}
 
-<div class="card p-4 mb-4">
-  <h4>Update Information</h4>
-  <form method="POST">
-    {{ update_form.hidden_tag() }}
+<style>
+  .account-container {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .account-hero {
+    margin-bottom: 2rem;
+  }
+  .account-hero .role-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 1rem;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.35rem;
+  }
+  .role-pill.buyer {
+    background: rgba(116, 185, 255, 0.2);
+    color: #0c4160;
+  }
+  .role-pill.seller {
+    background: rgba(255, 193, 7, 0.25);
+    color: #a06b00;
+  }
+  .account-card {
+    border-radius: 1rem;
+    border: none;
+  }
+  .account-card h4 {
+    color: #071330;
+    margin-bottom: 1rem;
+  }
+  .account-card .form-group {
+    margin-bottom: 1rem;
+  }
+  .balance-amount {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0c4160;
+  }
+  .subscription-table thead {
+    background: #f2f5f9;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+  }
+</style>
 
-    {{ update_form.firstname.label }} {{ update_form.firstname(class="form-control") }}
-    {{ update_form.lastname.label }} {{ update_form.lastname(class="form-control") }}
-    {{ update_form.email.label }} {{ update_form.email(class="form-control") }}
-    {{ update_form.address.label }} {{ update_form.address(class="form-control") }}
-
-    <br>
-    {{ update_form.submit(class="btn btn-primary") }}
-  </form>
-</div>
-
-<div class="card p-4">
-  <h4>Balance: ${{ user.balance }}</h4>
-
-  <form method="POST">
-    {{ balance_form.hidden_tag() }}
-
-    {{ balance_form.amount.label }} {{ balance_form.amount(class="form-control") }}
-
-    <br>
-    {{ balance_form.submit_add(class="btn btn-success") }}
-    {{ balance_form.submit_withdraw(class="btn btn-danger") }}
-  </form>
-</div>
-
-<div class="card p-4 mt-4">
-  <h4>Active Subscriptions</h4>
-  {% set freq_labels = {'weekly': 'Every Week', 'monthly': 'Every Month', 'quarterly': 'Every 3 Months'} %}
-  {% if subscriptions %}
-    <div class="table-responsive mt-3">
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Category</th>
-            <th>Frequency</th>
-            <th>Started</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for sub in subscriptions %}
-            <tr>
-              <td>{{ sub.product_name }}</td>
-              <td>{{ sub.category_name }}</td>
-              <td>{{ freq_labels.get(sub.frequency, sub.frequency|title) }}</td>
-              <td>{{ sub.created_at|friendly_datetime }}</td>
-              <td class="text-right">
-                <form method="post" action="{{ url_for('users.cancel_subscription', subscription_id=sub.id) }}">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
-                </form>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+<div class="account-container">
+  <div class="hero-panel account-hero">
+    <div>
+      <div class="eyebrow mb-2">Account Overview</div>
+      <h1 class="mb-1">{{ user.firstname }} {{ user.lastname }}</h1>
+      <p class="muted mb-0">{{ user.email }} • {{ user.address }}</p>
     </div>
-  {% else %}
-    <p class="mb-0 text-muted mt-2">No active subscriptions yet. Visit a Frozen Treat to subscribe.</p>
-  {% endif %}
+    <div class="text-right">
+      <span class="role-pill {{ role_class }}">{{ role_label }}</span>
+      <div class="muted small">Member since #{{ user.id }}</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-7">
+      <div class="card card-lift account-card mb-4">
+        <div class="card-body">
+          <h4>Update Information</h4>
+          <form method="POST">
+            {{ update_form.hidden_tag() }}
+            <div class="form-group">
+              {{ update_form.firstname.label }}
+              {{ update_form.firstname(class="form-control") }}
+            </div>
+            <div class="form-group">
+              {{ update_form.lastname.label }}
+              {{ update_form.lastname(class="form-control") }}
+            </div>
+            <div class="form-group">
+              {{ update_form.email.label }}
+              {{ update_form.email(class="form-control") }}
+            </div>
+            <div class="form-group">
+              {{ update_form.address.label }}
+              {{ update_form.address(class="form-control") }}
+            </div>
+            {{ update_form.submit(class="btn btn-theme-primary btn-block") }}
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="card card-lift account-card mb-4">
+        <div class="card-body">
+          <h4>Balance</h4>
+          <div class="balance-amount mb-3">${{ '{:,.2f}'.format(user.balance) }}</div>
+          <form method="POST">
+            {{ balance_form.hidden_tag() }}
+            <div class="form-group">
+              {{ balance_form.amount.label }}
+              {{ balance_form.amount(class="form-control", placeholder="0.00") }}
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              {{ balance_form.submit_add(class="btn btn-theme-primary mr-2 mb-2") }}
+              {{ balance_form.submit_withdraw(class="btn btn-outline-secondary mb-2") }}
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card-lift account-card mt-4">
+    <div class="card-body">
+      <h4>Active Subscriptions</h4>
+      {% set freq_labels = {'weekly': 'Every Week', 'monthly': 'Every Month', 'quarterly': 'Every 3 Months'} %}
+      {% if subscriptions %}
+        <div class="table-responsive mt-3">
+          <table class="table table-modern subscription-table mb-0">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Frequency</th>
+                <th>Started</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for sub in subscriptions %}
+                <tr>
+                  <td>{{ sub.product_name }}</td>
+                  <td>{{ sub.category_name }}</td>
+                  <td>{{ freq_labels.get(sub.frequency, sub.frequency|title) }}</td>
+                  <td>{{ sub.created_at|friendly_datetime }}</td>
+                  <td class="text-right">
+                    <form method="post" action="{{ url_for('users.cancel_subscription', subscription_id=sub.id) }}">
+                      <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="mb-0 text-muted mt-2">No active subscriptions yet. Visit a Frozen Treat to subscribe.</p>
+      {% endif %}
+    </div>
+  </div>
 </div>
 
 {% endblock %}
