@@ -4,6 +4,8 @@ from flask_login import login_user, logout_user, current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, RadioField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
+from flask import current_app as app
+from .models.product_review import SellerReview
 
 from .models.user import User
 from .models.subscription import Subscription
@@ -181,3 +183,34 @@ def cancel_subscription(subscription_id):
     else:
         flash('Unable to cancel that subscription.', 'danger')
     return redirect(url_for('users.account'))
+
+@bp.route('/user/<int:user_id>')
+def public_profile(user_id):
+    user = User.get(user_id)
+    if not user:
+        flash("User not found.")
+        return redirect(url_for('index.index'))
+
+    if user.is_seller:
+        reviews = SellerReview.get_for_seller(user_id)
+        return render_template('seller_profile.html', user=user, reviews=reviews)
+    else:
+        return render_template('user_profile.html', user=user)
+
+@bp.route('/search_profiles', methods=['GET', 'POST'])
+def search_profiles():
+    query = request.args.get('q', '')  # text from search bar
+    results = []
+
+    if query:
+        # Search by first or last name (case-insensitive)
+        rows = app.db.execute("""
+            SELECT id, email, firstname, lastname, address, balance, is_seller
+            FROM Users
+            WHERE LOWER(firstname) LIKE LOWER(:q)
+               OR LOWER(lastname) LIKE LOWER(:q)
+        """, q=f"%{query}%")
+        
+        results = [User(*row) for row in rows]
+
+    return render_template('search_profiles.html', query=query, results=results)

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Search Profiles</h2>
+
+<form method="get" action="{{ url_for('users.search_profiles') }}">
+    <input type="text" name="q" placeholder="Enter first or last name"
+           value="{{ query }}" class="form-control" style="max-width:300px;">
+    <button type="submit" class="btn btn-primary mt-2">Search</button>
+</form>
+
+{% if query %}
+    <h3 class="mt-4">Results for: "{{ query }}"</h3>
+
+    {% if results %}
+        <ul>
+        {% for user in results %}
+            <li>
+                {{ user.firstname }} {{ user.lastname }}
+                {% if user.is_seller %} (Seller) {% endif %}
+                
+                — <a href="{{ url_for('users.public_profile', user_id=user.id) }}">
+                    View Profile
+                  </a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No matching profiles found.</p>
+    {% endif %}
+{% endif %}
+
+{% endblock %}
