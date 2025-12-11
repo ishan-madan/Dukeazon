@@ -8,7 +8,8 @@ CREATE TABLE Users (
     firstname VARCHAR(255) NOT NULL,
     lastname VARCHAR(255) NOT NULL,
     address VARCHAR(255) NOT NULL,
-    balance DECIMAL(12,2) NOT NULL DEFAULT 0
+    balance DECIMAL(12,2) NOT NULL DEFAULT 0,
+    is_seller BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE Categories (

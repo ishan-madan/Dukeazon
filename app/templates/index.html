@@ -12,11 +12,13 @@
 
 <ul class="nav nav-tabs" id="homeTabs" role="tablist">
   <li class="nav-item">
-    <a class="nav-link active" id="shop-tab" data-toggle=etab" href="#shop" role="tab" aria-controls="shop" aria-selected="true">Shop</a>
+    <a class="nav-link active" id="shop-tab" data-toggle="tab" href="#shop" role="tab" aria-controls="shop" aria-selected="true">Shop</a>
   </li>
+  {% if current_user.is_authenticated %}
   <li class="nav-item">
-    <a class="nav-link" id="seller-tab" data-toggle="tab" href="#seller-tools" role="tab" aria-controls="seller-tools" aria-selected="false">Seller Tools</a>
+    <a class="nav-link" id="orders-tab" data-toggle="tab" href="#orders" role="tab" aria-controls="orders" aria-selected="false">Orders</a>
   </li>
+  {% endif %}
   <li class="nav-item ml-auto">
     {% if current_user.is_authenticated %}
     <a class="nav-link tab-icon-link" href="{{ url_for('cart.cart', user_id=current_user.id) }}" title="Open my cart">
@@ -30,7 +32,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M7 4H5L4 6h2l3.6 7.59-1.35 2.45A1 1 0 0 0 10.1 18H19v-2h-7.42l.93-1.68h5.99c.38 0 .72-.21.89-.55L22 6H6.21L5.27 4zM6 19a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm10 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
       </svg>
-      <span class="d-none d-md-inline">Log in</span>
+      <span class="d-none d-md-inline">My Cart</span>
     </a>
     {% endif %}
   </li>
@@ -217,89 +219,60 @@
     </div>
   </div>
 
-  <div class="tab-pane fade" id="seller-tools" role="tabpanel" aria-labelledby="seller-tab">
-    <div class="row">
-      <div class="col-lg-8">
-        <div class="card mb-4">
-          <div class="card-header">
-            <h3 class="h6 mb-0 text-white">Your Inventory</h3>
-          </div>
-          <div class="card-body">
-            {% if current_user.is_authenticated %}
-              {% if inventory %}
-              <div class="table-responsive mt-3">
-                <table class='table table-hover table-bordered'>
-                  <thead class="thead-light">
-                    <tr>
-                      <th scope="col">Listing ID</th>
-                      <th scope="col">Product Name</th>
-                      <th scope="col">Base Price</th>
-                      <th scope="col">Seller Price</th>
-                      <th scope="col">Quantity</th>
-                      <th scope="col">Active</th>
-                      <th scope="col">Image</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for item in inventory %}
-                    <tr>
-                      <th scope="row">{{ item.listing_id }}</th>
-                      {% set full_title = product_title_map.get(item.product_name|lower, item.product_name|title) %}
-                      <td>
-                        {% if full_title|length > 17 %}
-                          {{ full_title[:17] }}...
-                        {% else %}
-                          {{ full_title }}
-                        {% endif %}
-                      </td>
-                      <td>${{ '{:,.2f}'.format(item.base_price) }}</td>
-                      <td>${{ '{:,.2f}'.format(item.seller_price) }}</td>
-                      <td>{{ item.quantity }}</td>
-                      <td>{{ 'Yes' if item.is_active else 'No' }}</td>
-                      <td>
-                        {% if item.image_link %}
-                        <a href="{{ item.image_link }}" target="_blank">
-                          <img src="{{ item.image_link }}" alt="{{ item.product_name }}" style="width:80px; height:auto; border-radius:6px;">
-                        </a>
-                        {% else %}
-                        <img src="https://via.placeholder.com/80?text=No+Image" alt="No image">
-                        {% endif %}
-                      </td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
+  <!-- Orders Tab -->
+  <div class="tab-pane fade" id="orders" role="tabpanel" aria-labelledby="orders-tab">
+    {% if current_user.is_authenticated %}
+      {% if orders %}
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="h6 mb-0 text-white">Your Recent Orders</h3>
               </div>
-              {% else %}
-              <p class="mb-0">You currently have no inventory listed.</p>
-              {% endif %}
-            {% else %}
-            <p class="mb-0">Log in to manage your inventory.</p>
-            {% endif %}
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover mb-0">
+                    <thead>
+                      <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for order in orders %}
+                        <tr style="cursor: pointer;" onclick="window.location.href='{{ url_for('cart.order_detail', user_id=current_user.id, order_id=order.id) }}'">
+                          <td><strong>#{{ order.id }}</strong></td>
+                          <td>{{ order.created_at | friendly_datetime }}</td>
+                          <td>{{ order.item_count }} {{ 'item' if order.item_count == 1 else 'items' }}</td>
+                          <td>${{ '{:,.2f}'.format(order.total_amount) }}</td>
+                          <td>
+                            {% set status_class = 'order-placed' if order.fulfillment_status == 'Order Placed' else ('shipped' if order.fulfillment_status == 'Shipped' else 'delivered') %}
+                            <span class="status-pill {{ status_class }}">{{ order.fulfillment_status }}</span>
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="col-lg-4">
-        <div class="card mb-4">
-          <div class="card-header">
-            <h3 class="h6 mb-0 text-white">Search Seller Inventory</h3>
-          </div>
-          <div class="card-body">
-            {% if current_user.is_authenticated %}
-            <form id="seller-search-form" onsubmit="redirectToSellerInventory(event)">
-              <div class="form-group">
-                <label for="seller-id">Seller ID</label>
-                <input type="number" class="form-control" id="seller-id" placeholder="Enter Seller ID" required>
-              </div>
-              <button type="submit" class="btn btn-primary btn-block">Search</button>
-            </form>
-            {% else %}
-            <p class="small mb-0">Log in to search seller inventory.</p>
-            {% endif %}
-          </div>
+      {% else %}
+        <div class="alert alert-info" role="alert">
+          <h4 class="alert-heading">No Orders Yet</h4>
+          <p>You haven't placed any orders. Start shopping by clicking the Shop tab!</p>
         </div>
+      {% endif %}
+    {% else %}
+      <div class="alert alert-warning" role="alert">
+        <h4 class="alert-heading">Log In to View Orders</h4>
+        <p>Please <a href="{{ url_for('users.login') }}">log in</a> to see your orders.</p>
       </div>
-    </div>
+    {% endif %}
   </div>
 </div>
 

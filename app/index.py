@@ -53,8 +53,11 @@ def index():
         purchases = Purchase.get_all_by_uid_since(
             current_user.id, datetime.datetime(1980, 9, 14, 0, 0, 0)
         )
+        from .models.order import Order
+        orders = Order.list_by_user(current_user.id)
     else:
         purchases = None
+        orders = None
 
     # rating summary for each product
     rows = app.db.execute("""
@@ -80,6 +83,7 @@ def index():
                            avail_products=paginated_products,
                            purchase_history=purchases,
                            product_listings=listings_by_product,
+                           orders=orders,
                            page=page,
                            total_pages=total_pages,
                            page_numbers=list(range(1, total_pages + 1)),

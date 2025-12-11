@@ -393,14 +393,21 @@
       <ul class="navbar-nav ml-auto align-items-lg-center">
         <li class="nav-item"><a class="nav-link" href="{{ url_for('index.index') }}">Home</a></li>
         {% if current_user.is_authenticated %}
-  <li class="nav-item"><a class="nav-link" href="{{ url_for('products.new') }}">New Product</a></li>
-  <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.cart', user_id=current_user.id) }}">Cart</a></li>
-  <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.orders', user_id=current_user.id) }}">Orders</a></li>
-  <li class="nav-item"><a class="nav-link" href="{{ url_for('product_seller.seller_inventory', seller_id=current_user.id) }}">Inventory</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.seller_orders_view', seller_id=current_user.id) }}">Fulfillment</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('social.social_page') }}">Recent Feedback</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('social.my_reviews') }}">Reviews</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('users.purchases') }}">Purchases</a></li>
+          {% if current_user.is_seller %}
+            <!-- Seller Navigation Links -->
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('products.new') }}">Add New Product</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('product_seller.seller_inventory', seller_id=current_user.id) }}">Inventory</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.seller_orders_view', seller_id=current_user.id) }}">Fulfillment</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('social.social_page') }}">Recent Feedback</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('social.my_reviews') }}">Reviews</a></li>
+          {% else %}
+            <!-- Buyer Navigation Links -->
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.cart', user_id=current_user.id) }}">Cart</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.orders', user_id=current_user.id) }}">Orders</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('social.my_reviews') }}">Reviews</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('social.social_page') }}">Feedback</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('users.purchases') }}">Purchases</a></li>
+          {% endif %}
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
              aria-haspopup="true" aria-expanded="false">
