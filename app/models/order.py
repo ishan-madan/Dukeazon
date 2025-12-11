@@ -3,12 +3,45 @@ from sqlalchemy import text
 
 
 class Order:
-    def __init__(self, id, user_id, created_at, status, total_amount):
+    def __init__(self, id, user_id, created_at, status, total_amount,
+                 shipping_street=None, shipping_city=None, shipping_state=None,
+                 shipping_zip=None, shipping_apt=None):
         self.id = id
         self.user_id = user_id
         self.created_at = created_at
         self.status = status
         self.total_amount = total_amount
+        self.shipping_street = shipping_street
+        self.shipping_city = shipping_city
+        self.shipping_state = shipping_state
+        self.shipping_zip = shipping_zip
+        self.shipping_apt = shipping_apt
+
+    @staticmethod
+    def _compose_shipping_address(street, apt, city, state, zip_code, fallback=None):
+        """
+        Combine individual shipping components into a single human-readable line.
+        """
+        components = []
+        if street:
+            first_line = street
+            if apt:
+                first_line = f"{street}, {apt}"
+            components.append(first_line)
+        elif apt:
+            components.append(apt)
+
+        line2_parts = [part for part in (city, state) if part]
+        line2 = ", ".join(line2_parts)
+        if zip_code:
+            line2 = f"{line2} {zip_code}".strip() if line2 else zip_code
+        if line2:
+            components.append(line2)
+
+        if not components and fallback:
+            components.append(fallback)
+
+        return ", ".join(components) if components else None
 
     @staticmethod
     def list_by_user(user_id):
@@ -47,7 +80,16 @@ ORDER BY o.created_at DESC
     @staticmethod
     def get_with_items(user_id, order_id):
         order_rows = app.db.execute("""
-SELECT id, user_id, created_at, status, total_amount
+SELECT id,
+       user_id,
+       created_at,
+       status,
+       total_amount,
+       shipping_street,
+       shipping_city,
+       shipping_state,
+       shipping_zip,
+       shipping_apt
 FROM Orders
 WHERE id = :order_id AND user_id = :user_id
 """, order_id=order_id, user_id=user_id)
@@ -56,6 +98,13 @@ WHERE id = :order_id AND user_id = :user_id
             return None
 
         order = Order(*order_rows[0])
+        order.shipping_address = Order._compose_shipping_address(
+            order.shipping_street,
+            order.shipping_apt,
+            order.shipping_city,
+            order.shipping_state,
+            order.shipping_zip
+        )
 
         item_rows = app.db.execute("""
     SELECT oi.id,
@@ -128,7 +177,12 @@ SELECT oi.id,
        o.created_at,
        o.status,
        o.total_amount,
-       (SELECT COALESCE(SUM(quantity),0) FROM OrderItems WHERE order_id = o.id) AS total_items
+       (SELECT COALESCE(SUM(quantity),0) FROM OrderItems WHERE order_id = o.id) AS total_items,
+       o.shipping_street,
+       o.shipping_city,
+       o.shipping_state,
+       o.shipping_zip,
+       o.shipping_apt
 FROM OrderItems oi
 JOIN Orders o ON oi.order_id = o.id
 JOIN Products p ON oi.product_id = p.id
@@ -145,24 +199,38 @@ WHERE oi.seller_id = :seller_id
 
         items = []
         for row in rows:
+            (item_id, order_id, product_id, product_name, quantity, unit_price, subtotal,
+             fulfilled, fulfilled_at, fulfillment_status, buyer_id, buyer_name, buyer_address_fallback,
+             order_created_at, order_status, order_total, order_total_items,
+             shipping_street, shipping_city, shipping_state, shipping_zip, shipping_apt) = row
+
+            shipping_address = Order._compose_shipping_address(
+                shipping_street,
+                shipping_apt,
+                shipping_city,
+                shipping_state,
+                shipping_zip,
+                fallback=buyer_address_fallback
+            )
             items.append({
-                "item_id": row[0],
-                "order_id": row[1],
-                "product_id": row[2],
-                "product_name": row[3],
-                "quantity": row[4],
-                "unit_price": row[5],
-                "subtotal": row[6],
-                "fulfilled": row[7],
-                "fulfilled_at": row[8],
-                "fulfillment_status": row[9],
-                "buyer_id": row[10],
-                "buyer_name": row[11],
-                "buyer_address": row[12],
-                "order_created_at": row[13],
-                "order_status": row[14],
-                "order_total": row[15],
-                "order_total_items": row[16]
+                "item_id": item_id,
+                "order_id": order_id,
+                "product_id": product_id,
+                "product_name": product_name,
+                "quantity": quantity,
+                "unit_price": unit_price,
+                "subtotal": subtotal,
+                "fulfilled": fulfilled,
+                "fulfilled_at": fulfilled_at,
+                "fulfillment_status": fulfillment_status,
+                "buyer_id": buyer_id,
+                "buyer_name": buyer_name,
+                "buyer_address": shipping_address,
+                "order_created_at": order_created_at,
+                "order_status": order_status,
+                "order_total": order_total,
+                "order_total_items": order_total_items,
+                "shipping_address": shipping_address
             })
         return items
 

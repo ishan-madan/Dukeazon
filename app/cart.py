@@ -153,8 +153,20 @@ def remove_saved_item(user_id, listing_id):
 def checkout(user_id):
     _ensure_owner(user_id)
 
+    shipping_info = None
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+        potential = payload.get('shipping')
+        if isinstance(potential, dict):
+            shipping_info = potential
+    else:
+        shipping_fields = ['street', 'city', 'state', 'zip_code', 'apt']
+        incoming = {field: request.form.get(field, '').strip() for field in shipping_fields}
+        if any(incoming.values()):
+            shipping_info = incoming
+
     try:
-        order_id = Cart.checkout(user_id)
+        order_id = Cart.checkout(user_id, shipping_info=shipping_info)
     except ValueError as exc:
         return _handle_error(user_id, str(exc))
 
@@ -210,8 +222,15 @@ def payment(user_id):
             for err in errors:
                 flash(err, 'danger')
         else:
+            shipping_info = {
+                "street": form_data["street"],
+                "city": form_data["city"],
+                "state": form_data["state"],
+                "zip_code": form_data["zip_code"],
+                "apt": form_data["apt"]
+            }
             try:
-                order_id = Cart.checkout(user_id)
+                order_id = Cart.checkout(user_id, shipping_info=shipping_info)
             except ValueError as exc:
                 flash(str(exc), 'danger')
             else:
