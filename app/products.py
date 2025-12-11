@@ -38,7 +38,8 @@ def detail(product_id):
     if not product:
         abort(404)
     sellers = ProductSeller.get_active_by_product(product_id)
-    reviews = ProductReview.get_for_product(product_id)
+    uid = current_user.id if current_user.is_authenticated else None
+    reviews = ProductReview.get_for_product(product_id, user_id=uid)
     suggestions = Product.similar(product, limit=4)
     return render_template('product_detail.html',
                            product=product,

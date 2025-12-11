@@ -101,3 +101,17 @@ CREATE TABLE IF NOT EXISTS seller_reviews (
   body       TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Votes that mark a product/seller review as helpful.
+-- We allow one vote per user per review, across both review types.
+CREATE TABLE IF NOT EXISTS review_votes (
+  vote_id     SERIAL PRIMARY KEY,
+  review_type VARCHAR(10) NOT NULL CHECK (review_type IN ('product', 'seller')),
+  review_id   INT NOT NULL,
+  user_id     INT NOT NULL REFERENCES Users(id),
+  vote        SMALLINT NOT NULL DEFAULT 1 CHECK (vote = 1),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(review_type, review_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS review_votes_lookup_idx
+  ON review_votes(review_type, review_id);

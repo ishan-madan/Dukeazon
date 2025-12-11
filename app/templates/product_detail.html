@@ -87,10 +87,36 @@
             <div>
               <strong>{{ review.firstname }} {{ review.lastname }}</strong>
               <span class="ml-2">⭐ {{ review.rating }}</span>
+              {% if review.helpful_rank and review.helpful_rank <= 3 %}
+                <span class="badge badge-info ml-2">Top helpful</span>
+              {% endif %}
             </div>
             <small class="text-muted">{{ review.created_at }}</small>
           </div>
           <p class="mb-1">{{ review.body }}</p>
+          <div class="d-flex align-items-center">
+            {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('social.toggle_helpful_vote') }}" class="mr-2">
+              <input type="hidden" name="type" value="product">
+              <input type="hidden" name="review_id" value="{{ review.review_id }}">
+              <input type="hidden" name="next" value="{{ request.full_path }}">
+              {% if review.user_voted %}
+                <input type="hidden" name="action" value="remove">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                  Helpful ({{ review.helpful_count }}) ✓
+                </button>
+              {% else %}
+                <button type="submit" class="btn btn-sm btn-outline-success">
+                  Helpful ({{ review.helpful_count }})
+                </button>
+              {% endif %}
+            </form>
+            {% else %}
+              <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('users.login', next=request.full_path) }}">
+                Helpful ({{ review.helpful_count }})
+              </a>
+            {% endif %}
+          </div>
         </div>
       {% endfor %}
     </div>
