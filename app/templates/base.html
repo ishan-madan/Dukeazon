@@ -15,9 +15,16 @@
       --midnight-blue: #0C4160;
       --dark-blue: #071330;
     }
+    html, body {
+      min-height: 100%;
+      background-color: #eef2f8;
+    }
     body {
       font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
       background: linear-gradient(180deg, #f8fbff 0%, #eef2f8 60%, #e4e8f0 100%);
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      background-size: cover;
       color: var(--dark-blue);
     }
     .navbar {
@@ -384,7 +391,7 @@
     </button>
     <div class="collapse navbar-collapse" id="mainNav">
       <ul class="navbar-nav ml-auto align-items-lg-center">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('products.browse') }}">Products</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('index.index') }}">Home</a></li>
         {% if current_user.is_authenticated %}
   <li class="nav-item"><a class="nav-link" href="{{ url_for('products.new') }}">New Product</a></li>
   <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.cart', user_id=current_user.id) }}">Cart</a></li>
