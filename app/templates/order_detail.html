@@ -20,11 +20,37 @@
   </div>
 </div>
 
+<style>
+  .order-table thead th {
+    background: #f2f5f9;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+  }
+  .order-table td,
+  .order-table th {
+    vertical-align: middle;
+  }
+  .review-actions {
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .review-actions .btn {
+    width: 100%;
+  }
+  .review-actions .locked-note {
+    font-size: 0.82rem;
+    color: #6c7a92;
+  }
+</style>
+
 {% if items %}
   <div class="card card-lift mb-4">
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-modern mb-0">
+        <table class="table table-modern order-table mb-0">
           <thead>
             <tr>
               <th scope="col">#</th>
@@ -34,6 +60,7 @@
               <th scope="col">Quantity</th>
               <th scope="col" class="text-right">Subtotal</th>
               <th scope="col">Fulfillment</th>
+              <th scope="col">Reviews</th>
             </tr>
           </thead>
           <tbody>
@@ -51,22 +78,25 @@
                 {% if item.fulfilled_at %}
                 <div class="small text-muted">at {{ item.fulfilled_at | friendly_datetime }}</div>
                 {% endif %}
-                {% if current_user.is_authenticated and current_user.id == user_id and item.seller_id != current_user.id and item.fulfillment_status == 'Delivered' %}
-                  <div class="mt-2">
-                    {% set existing_review_id = seller_reviews_map.get(item.seller_id) if seller_reviews_map is defined else None %}
-                    {% if existing_review_id %}
-                      <a href="{{ url_for('social.seller_review', seller_id=item.seller_id) }}" class="btn btn-sm btn-outline-primary">Edit Seller Review</a>
-                      <div class="small text-muted mt-1">You have already reviewed this seller.</div>
-                    {% else %}
-                      <a href="{{ url_for('social.seller_review', seller_id=item.seller_id) }}" class="btn btn-sm btn-outline-primary">Leave Seller Review</a>
-                    {% endif %}
-                  </div>
-                {% endif %}
+              </td>
+              <td>
+                <div class="review-actions">
                 {% if current_user.is_authenticated and current_user.id == user_id and item.fulfillment_status == 'Delivered' %}
-                  <div class="mt-2">
-                    <a href="{{ url_for('social.product_review', product_id=item.product_id) }}" class="btn btn-sm btn-outline-success">Product Review</a>
-                  </div>
+                  {% if item.seller_id != current_user.id %}
+                    <div>
+                      {% set existing_review_id = seller_reviews_map.get(item.seller_id) if seller_reviews_map is defined else None %}
+                      {% if existing_review_id %}
+                        <a href="{{ url_for('social.seller_review', seller_id=item.seller_id) }}" class="btn btn-sm btn-outline-primary">Edit Seller Review</a>
+                      {% else %}
+                        <a href="{{ url_for('social.seller_review', seller_id=item.seller_id) }}" class="btn btn-sm btn-outline-primary">Leave Seller Review</a>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                  <a href="{{ url_for('social.product_review', product_id=item.product_id) }}" class="btn btn-sm btn-outline-success">Product Review</a>
+                {% else %}
+                  <small class="locked-note">Reviews unlock once this item is delivered.</small>
                 {% endif %}
+                </div>
               </td>
             </tr>
             {% endfor %}

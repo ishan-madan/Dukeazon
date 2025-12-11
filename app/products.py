@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify, render_template, request, abort, redirect, url_for, flash
+from flask import Blueprint, jsonify, render_template, request, abort, redirect, url_for, flash, current_app as app
 from flask_login import login_required, current_user
+import math
 
 from .models.category import Category
 from .models.product import Product
@@ -10,13 +11,85 @@ from .models.subscription import Subscription
 bp = Blueprint('products', __name__, url_prefix='/products')
 
 
+@bp.route('/', methods=['GET'])
+def browse():
+    category_id = request.args.get('category', type=int)
+    query = request.args.get('q', type=str)
+    sort = request.args.get('sort', default='price_asc', type=str)
+    rating_threshold = request.args.get('rating_threshold', type=float)
+
+    products = Product.search(category_id=category_id,
+                              search=query,
+                              sort=sort,
+                              available=True,
+                              rating_threshold=rating_threshold)
+    # Build product rating summary for cards
+    rating_map = {}
+    if products:
+        ids = [p.id for p in products]
+        rows = app.db.execute(
+            """
+            SELECT product_id, AVG(rating)::float AS avg_rating, COUNT(*) AS review_count
+            FROM product_reviews
+            WHERE product_id = ANY(:ids)
+            GROUP BY product_id
+            """,
+            ids=ids
+        )
+        rating_map = {r.product_id: {"avg": float(r.avg_rating), "count": r.review_count} for r in rows}
+    categories = Category.get_all()
+
+    return render_template('products.html',
+                           products=products,
+                           categories=categories,
+                           selected_category=category_id,
+                           query=query or '',
+                           sort=sort,
+                           rating_threshold=rating_threshold,
+                           product_ratings=rating_map)
+
+
 @bp.route('/<int:product_id>', methods=['GET'])
 def detail(product_id):
     product = Product.get(product_id)
     if not product:
         abort(404)
+    review_page = request.args.get('rpage', 1, type=int)
+    review_sort = request.args.get('rsort', 'helpful')
+    review_min_rating = request.args.get('rstars', type=int)
+    per_page = 8
     sellers = ProductSeller.get_active_by_product(product_id)
-    reviews = ProductReview.get_for_product(product_id)
+    uid = current_user.id if current_user.is_authenticated else None
+    reviews = ProductReview.get_for_product(product_id,
+                                           user_id=uid,
+                                           per_page=per_page,
+                                           page=review_page,
+                                           min_rating=review_min_rating,
+                                           sort=review_sort)
+    rating_summary = app.db.execute(
+        """
+        SELECT AVG(rating) AS avg_rating,
+               COUNT(*)    AS num_reviews
+        FROM product_reviews
+        WHERE product_id = :pid
+        """,
+        pid=product_id
+    )
+    rating_summary = rating_summary[0] if rating_summary else None
+    total_reviews = rating_summary.num_reviews if rating_summary else 0
+    total_review_pages = max(1, math.ceil(total_reviews / per_page)) if total_reviews else 1
+    # rating breakdown by star
+    breakdown_rows = app.db.execute(
+        """
+        SELECT rating, COUNT(*) AS cnt
+        FROM product_reviews
+        WHERE product_id = :pid
+        GROUP BY rating
+        """,
+        pid=product_id
+    )
+    rating_breakdown = {r.rating: r.cnt for r in breakdown_rows}
+
     suggestions = Product.similar(product, limit=4)
     allow_subscription = bool(product.category_name and product.category_name.lower().startswith('frozen treat'))
     existing_subscription = None
@@ -38,6 +111,13 @@ def detail(product_id):
                            product=product,
                            sellers=sellers,
                            reviews=reviews,
+                           rating_summary=rating_summary,
+                           rating_breakdown=rating_breakdown,
+                           review_page=review_page,
+                           total_review_pages=total_review_pages,
+                           review_sort=review_sort,
+                           review_min_rating=review_min_rating,
+                           per_page=per_page,
                            suggestions=suggestions,
                            allow_subscription=allow_subscription,
                            subscription=existing_subscription,

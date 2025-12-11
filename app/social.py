@@ -4,6 +4,8 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from pathlib import Path
+from .models.product_review import ProductReview
+import math
 
 bp = Blueprint('social', __name__)
 
@@ -27,21 +29,50 @@ def public_seller_reviews(seller_id):
         return render_template('seller_reviews_public.html', seller=None, all_reviews=None, rating_summary=None)
 
     seller = seller_rows[0]
+    uid = current_user.id if current_user.is_authenticated else 0
 
     # 2. All reviews for this seller
     all_reviews = app.db.execute(
         """
-        SELECT sr.rating,
-               sr.body,
-               sr.created_at,
-               u.firstname,
-               u.lastname
-        FROM seller_reviews sr
-        JOIN users u ON sr.user_id = u.id
-        WHERE sr.seller_id = :sid
-        ORDER BY sr.created_at DESC
+        WITH aggregated AS (
+            SELECT sr.seller_review_id,
+                   sr.seller_id,
+                   sr.user_id,
+                   sr.rating,
+                   sr.body,
+                   sr.created_at,
+                   u.firstname,
+                   u.lastname,
+                   COALESCE(SUM(rv.vote), 0) AS helpful_count,
+                   MAX(CASE WHEN rv.user_id = :uid THEN 1 ELSE 0 END) AS user_voted,
+                   MAX(CASE WHEN EXISTS (
+                           SELECT 1
+                           FROM Purchases pu
+                           JOIN ProductSeller ps ON pu.pid = ps.product_id
+                           WHERE pu.uid = sr.user_id
+                             AND ps.seller_id = sr.seller_id
+                       ) THEN 1 ELSE 0 END) AS verified
+            FROM seller_reviews sr
+            JOIN users u ON sr.user_id = u.id
+            LEFT JOIN review_votes rv
+                   ON rv.review_type = 'seller'
+                  AND rv.review_id = sr.seller_review_id
+            WHERE sr.seller_id = :sid
+            GROUP BY sr.seller_review_id, u.firstname, u.lastname
+        ),
+        ranked AS (
+            SELECT *,
+                   ROW_NUMBER() OVER (ORDER BY helpful_count DESC, created_at DESC) AS helpful_rank
+            FROM aggregated
+        )
+        SELECT *
+        FROM ranked
+        ORDER BY CASE WHEN helpful_rank <= 3 THEN 0 ELSE 1 END,
+                 helpful_rank,
+                 created_at DESC
         """,
-        sid=seller_id
+        sid=seller_id,
+        uid=uid
     )
 
     # 3. Summary (avg + count)
@@ -80,6 +111,65 @@ def social_page():
     rows = app.db.execute(sql, user_id=current_user.id, type=ftype, limit=limit)
 
     return render_template('social.html', rows=rows)
+
+
+@bp.route('/reviews/helpful', methods=['POST'])
+@login_required
+def toggle_helpful_vote():
+    """
+    Mark or unmark a review (product or seller) as helpful for the current user.
+    """
+    review_type = (request.form.get('review_type') or request.form.get('type') or '').strip().lower()
+    review_id_raw = request.form.get('review_id')
+    try:
+        review_id = int(review_id_raw)
+    except (TypeError, ValueError):
+        review_id = None
+    action = request.form.get('action', 'add')
+    next_url = request.form.get('next') or request.referrer or url_for('social.social_page')
+
+    if review_type not in ('product', 'seller') or review_id is None:
+        flash("Invalid review selection.")
+        return redirect(next_url)
+
+    # Validate that the review exists
+    if review_type == 'product':
+        table = 'product_reviews'
+        id_col = 'product_review_id'
+    else:
+        table = 'seller_reviews'
+        id_col = 'seller_review_id'
+
+    exists = app.db.execute(
+        f"SELECT 1 FROM {table} WHERE {id_col} = :rid LIMIT 1",
+        rid=review_id
+    )
+    if not exists:
+        flash("Review not found.")
+        return redirect(next_url)
+
+    if action == 'remove':
+        app.db.execute(
+            """
+            DELETE FROM review_votes
+            WHERE review_type = :rt AND review_id = :rid AND user_id = :uid
+            """,
+            rt=review_type, rid=review_id, uid=current_user.id
+        )
+        flash("Removed your helpful vote.")
+    else:
+        app.db.execute(
+            """
+            INSERT INTO review_votes(review_type, review_id, user_id, vote)
+            VALUES (:rt, :rid, :uid, 1)
+            ON CONFLICT (review_type, review_id, user_id)
+            DO UPDATE SET vote = EXCLUDED.vote, created_at = now()
+            """,
+            rt=review_type, rid=review_id, uid=current_user.id
+        )
+        flash("Marked as helpful.")
+
+    return redirect(next_url)
 
 
 @bp.route('/products/<int:product_id>/review', methods=['GET', 'POST'])
@@ -170,34 +260,22 @@ def product_review(product_id):
             flash("Review saved.")
             return redirect(url_for('social.product_review', product_id=product_id))
 
-    # 3. Load this user's review (if any)
-    user_review_rows = app.db.execute(
-        """
-        SELECT product_review_id, rating, body, created_at
-        FROM product_reviews
-        WHERE product_id = :pid AND user_id = :uid
-        """,
-        pid=product_id, uid=current_user.id
+    review_page = request.args.get('page', 1, type=int)
+    per_page = 10
+    review_sort = request.args.get('sort', 'helpful')
+    review_min_rating = request.args.get('stars', type=int)
+    # 3. Load all reviews (with helpful counts); find the current user's review
+    all_reviews = ProductReview.get_for_product(
+        product_id,
+        user_id=current_user.id,
+        per_page=per_page,
+        page=review_page,
+        min_rating=review_min_rating,
+        sort=review_sort
     )
-    user_review = user_review_rows[0] if user_review_rows else None
+    user_review = next((r for r in all_reviews if r.user_id == current_user.id), None)
 
-    # 4. Load all reviews for this product
-    all_reviews = app.db.execute(
-        """
-        SELECT pr.rating,
-               pr.body,
-               pr.created_at,
-               u.firstname,
-               u.lastname
-        FROM product_reviews pr
-        JOIN users u ON pr.user_id = u.id
-        WHERE pr.product_id = :pid
-        ORDER BY pr.created_at DESC
-        """,
-        pid=product_id
-    )
-
-    # 5. Summary (avg + count)
+    # 4. Summary (avg + count)
     summary_rows = app.db.execute(
         """
         SELECT AVG(rating) AS avg_rating,
@@ -208,13 +286,30 @@ def product_review(product_id):
         pid=product_id
     )
     rating_summary = summary_rows[0] if summary_rows else None
+    total_reviews = rating_summary.num_reviews if rating_summary else 0
+    total_review_pages = max(1, math.ceil(total_reviews / per_page)) if total_reviews else 1
+    breakdown_rows = app.db.execute(
+        """
+        SELECT rating, COUNT(*) AS cnt
+        FROM product_reviews
+        WHERE product_id = :pid
+        GROUP BY rating
+        """,
+        pid=product_id
+    )
+    rating_breakdown = {r.rating: r.cnt for r in breakdown_rows}
 
     return render_template(
         'product_review.html',
         product=product,
         user_review=user_review,
         all_reviews=all_reviews,
-        rating_summary=rating_summary
+        rating_summary=rating_summary,
+        rating_breakdown=rating_breakdown,
+        review_sort=review_sort,
+        review_min_rating=review_min_rating,
+        review_page=review_page,
+        total_review_pages=total_review_pages
     )
 
 
@@ -225,43 +320,60 @@ def my_reviews():
     List all reviews authored by the current user (product + seller),
     newest first, with links to edit.
     """
-    product_reviews = app.db.execute(
-        """
-        SELECT pr.product_review_id,
-               pr.product_id,
-               pr.rating,
-               pr.body,
-               pr.created_at,
-               p.name AS product_name
-        FROM product_reviews pr
-        JOIN products p ON pr.product_id = p.id
-        WHERE pr.user_id = :uid
-        ORDER BY pr.created_at DESC
-        """,
-        uid=current_user.id
-    )
+    ftype = request.args.get('type', 'all').lower()
+    if ftype not in ('all', 'product', 'seller'):
+        ftype = 'all'
+    min_rating = request.args.get('stars', type=int)
 
-    seller_reviews = app.db.execute(
-        """
-        SELECT sr.seller_review_id,
-               sr.seller_id,
-               sr.rating,
-               sr.body,
-               sr.created_at,
-               u.firstname,
-               u.lastname
-        FROM seller_reviews sr
-        JOIN users u ON sr.seller_id = u.id
-        WHERE sr.user_id = :uid
-        ORDER BY sr.created_at DESC
-        """,
-        uid=current_user.id
-    )
+    product_reviews = []
+    if ftype in ('all', 'product'):
+        product_reviews = app.db.execute(
+            """
+            SELECT pr.product_review_id,
+                   pr.product_id,
+                   pr.rating,
+                   pr.body,
+                   pr.created_at,
+                   p.name AS product_name,
+                   (SELECT COUNT(*) FROM product_reviews WHERE product_id = pr.product_id) AS total_reviews_for_product
+            FROM product_reviews pr
+            JOIN products p ON pr.product_id = p.id
+            WHERE pr.user_id = :uid
+              AND (:min_rating IS NULL OR pr.rating >= :min_rating)
+            ORDER BY pr.created_at DESC
+            """,
+            uid=current_user.id,
+            min_rating=min_rating
+        )
+
+    seller_reviews = []
+    if ftype in ('all', 'seller'):
+        seller_reviews = app.db.execute(
+            """
+            SELECT sr.seller_review_id,
+                   sr.seller_id,
+                   sr.rating,
+                   sr.body,
+                   sr.created_at,
+                   u.firstname,
+                   u.lastname,
+                   (SELECT COUNT(*) FROM seller_reviews WHERE seller_id = sr.seller_id) AS total_reviews_for_seller
+            FROM seller_reviews sr
+            JOIN users u ON sr.seller_id = u.id
+            WHERE sr.user_id = :uid
+              AND (:min_rating IS NULL OR sr.rating >= :min_rating)
+            ORDER BY sr.created_at DESC
+            """,
+            uid=current_user.id,
+            min_rating=min_rating
+        )
 
     return render_template(
         'my_reviews.html',
         product_reviews=product_reviews,
-        seller_reviews=seller_reviews
+        seller_reviews=seller_reviews,
+        filter_type=ftype,
+        filter_min_rating=min_rating
     )
 
 
@@ -288,14 +400,18 @@ def seller_review(seller_id):
 
     seller = seller_rows[0]
 
-    # 2. Check eligibility: must have purchased from this seller
+    # 2. Check eligibility: must have at least one delivered item from this seller
     eligible_rows = app.db.execute(
         """
         SELECT 1
-        FROM Purchases pu
-        JOIN ProductSeller ps ON pu.pid = ps.product_id
-        WHERE pu.uid = :uid
-          AND ps.seller_id = :sid
+        FROM OrderItems oi
+        JOIN Orders o ON oi.order_id = o.id
+        WHERE o.user_id = :uid
+          AND oi.seller_id = :sid
+          AND COALESCE(
+                oi.fulfillment_status,
+                CASE WHEN oi.fulfilled THEN 'Delivered' ELSE 'Order Placed' END
+              ) = 'Delivered'
         LIMIT 1
         """,
         uid=current_user.id,
@@ -368,34 +484,58 @@ def seller_review(seller_id):
             flash("Seller review saved.")
             return redirect(url_for('social.seller_review', seller_id=seller_id))
 
-    # 3. Load this user's review (if any)
-    user_review_rows = app.db.execute(
-        """
-        SELECT seller_review_id, rating, body, created_at
-        FROM seller_reviews
-        WHERE seller_id = :sid AND user_id = :uid
-        """,
-        sid=seller_id, uid=current_user.id
-    )
-    user_review = user_review_rows[0] if user_review_rows else None
-
-    # 4. All reviews for this seller
+    # 3. All reviews for this seller (with helpful counts)
     all_reviews = app.db.execute(
         """
-        SELECT sr.rating,
-               sr.body,
-               sr.created_at,
-               u.firstname,
-               u.lastname
-        FROM seller_reviews sr
-        JOIN users u ON sr.user_id = u.id
-        WHERE sr.seller_id = :sid
-        ORDER BY sr.created_at DESC
+        WITH aggregated AS (
+            SELECT sr.seller_review_id,
+                   sr.seller_id,
+                   sr.user_id,
+                   sr.rating,
+                   sr.body,
+                   sr.created_at,
+                   u.firstname,
+                   u.lastname,
+                   COALESCE(SUM(rv.vote), 0) AS helpful_count,
+                   MAX(CASE WHEN rv.user_id = :uid THEN 1 ELSE 0 END) AS user_voted,
+                   MAX(CASE WHEN EXISTS (
+                           SELECT 1
+                           FROM OrderItems oi2
+                           JOIN Orders o2 ON oi2.order_id = o2.id
+                           WHERE o2.user_id = sr.user_id
+                             AND oi2.seller_id = sr.seller_id
+                             AND COALESCE(
+                                   oi2.fulfillment_status,
+                                   CASE WHEN oi2.fulfilled THEN 'Delivered' ELSE 'Order Placed' END
+                                 ) = 'Delivered'
+                       ) THEN 1 ELSE 0 END) AS verified
+            FROM seller_reviews sr
+            JOIN users u ON sr.user_id = u.id
+            LEFT JOIN review_votes rv
+                   ON rv.review_type = 'seller'
+                  AND rv.review_id = sr.seller_review_id
+            WHERE sr.seller_id = :sid
+            GROUP BY sr.seller_review_id, u.firstname, u.lastname
+        ),
+        ranked AS (
+            SELECT *,
+                   ROW_NUMBER() OVER (ORDER BY helpful_count DESC, created_at DESC) AS helpful_rank
+            FROM aggregated
+        )
+        SELECT *
+        FROM ranked
+        ORDER BY CASE WHEN helpful_rank <= 3 THEN 0 ELSE 1 END,
+                 helpful_rank,
+                 created_at DESC
         """,
-        sid=seller_id
+        sid=seller_id,
+        uid=current_user.id
     )
 
-    # 5. Summary (avg + count)
+    # Pick out the current user's review (if any)
+    user_review = next((r for r in all_reviews if r.user_id == current_user.id), None)
+
+    # 4. Summary (avg + count)
     summary_rows = app.db.execute(
         """
         SELECT AVG(rating) AS avg_rating,

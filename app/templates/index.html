@@ -149,6 +149,13 @@
                     <p class="product-description">
                       {{ (product.description or 'Explore details on the product page.')|truncate(90, True, '...') }}
                     </p>
+                    {% if product.best_seller_rating is not none %}
+                      {% if rating_threshold is not none and product.best_seller_rating >= rating_threshold %}
+                        <span class="badge badge-success mb-2">Trusted Seller</span>
+                      {% else %}
+                        <span class="badge badge-light mb-2">Top Seller</span>
+                      {% endif %}
+                    {% endif %}
                     <div class="product-rating">
                       {% if summary %}
                         {% set num = summary.get('count', 0) %}
@@ -168,7 +175,7 @@
                             <span style="color: #e1e5eb;">
                               {% for _ in range(empty) %}&#9734;{% endfor %}
                             </span>
-                            <span class="text-muted">({{ num }})</span>
+                            <span class="text-muted">({{ num }} reviews)</span>
                           </span>
                         {% else %}
                           <small class="text-muted">No reviews yet</small>

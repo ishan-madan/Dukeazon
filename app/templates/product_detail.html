@@ -15,6 +15,19 @@
       <span class="badge badge-info">{{ product.category_name }}</span>
       <p class="h4 mt-3 text-primary">${{ '%.2f'|format(product.price) }}</p>
       <p class="lead">{{ product.description }}</p>
+      {% if rating_summary and rating_summary.num_reviews > 0 %}
+      <div class="mb-2">
+        {% set stars = (rating_summary.avg_rating or 0)|round(0, 'floor')|int %}
+        {% for _ in range(stars) %}&#9733;{% endfor %}
+        {% for _ in range(5 - stars) %}&#9734;{% endfor %}
+        <small class="text-muted">
+          {{ "%.2f"|format(rating_summary.avg_rating) }} avg •
+          {{ rating_summary.num_reviews }} review{{ 's' if rating_summary.num_reviews != 1 else '' }}
+        </small>
+      </div>
+      {% else %}
+      <div class="text-muted mb-2">No reviews yet.</div>
+      {% endif %}
       {% if current_user.is_authenticated and product.creator_id == current_user.id %}
       <a class="btn btn-outline-primary mt-2" href="{{ url_for('products.edit', product_id=product.id) }}">Edit Product</a>
       {% endif %}
@@ -114,8 +127,131 @@
   {% endif %}
 
   <hr>
-  <h4>Reviews</h4>
+  <style>
+    .review-filter-card {
+      border-radius: 1rem;
+      border: 1px solid #e2e8f5;
+      background: #fdfefe;
+      padding: 1.5rem;
+      box-shadow: 0 10px 24px rgba(12, 65, 96, 0.08);
+    }
+    .review-filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 0.75rem;
+    }
+    .review-filter-grid small {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      color: #6c7a92;
+      text-transform: uppercase;
+    }
+    .rating-breakdown-bar {
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(12,65,96,0.15);
+      overflow: hidden;
+    }
+    .rating-breakdown-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #0c4160, #123d66);
+    }
+    .rating-summary-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+    }
+    .rating-summary-pill {
+      border: 1px solid #dbe3f4;
+      border-radius: 999px;
+      padding: 0.15rem 0.75rem;
+      background: #fff;
+      color: #0c4160;
+      transition: all 0.2s ease;
+    }
+    .rating-summary-pill .count {
+      color: #93a0b8;
+      margin-left: 0.35rem;
+    }
+    .rating-summary-pill.active {
+      background: linear-gradient(135deg, #0c4160, #123d66);
+      color: #fff;
+      border-color: transparent;
+    }
+    .rating-summary-pill.active .count {
+      color: rgba(255,255,255,0.85);
+    }
+  </style>
+
+  {% set cur_sort = review_sort or 'helpful' %}
+  <div class="review-filter-card mb-3">
+    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between">
+      <div class="mb-3 mb-lg-0">
+        <h4 class="mb-1">Reviews</h4>
+        <p class="text-muted mb-0">Use the filters to hone in on the most relevant feedback.</p>
+      </div>
+      <form id="review-filter-form" class="review-filter w-100 w-lg-auto">
+        <input type="hidden" name="rpage" value="1">
+        <div class="review-filter-grid">
+          <div>
+            <small>Sort By</small>
+            <select id="review-sort" name="rsort" class="form-control form-control-sm mt-1">
+              <option value="helpful" {% if cur_sort == 'helpful' %}selected{% endif %}>Most helpful</option>
+              <option value="recent" {% if cur_sort == 'recent' %}selected{% endif %}>Most recent</option>
+            </select>
+          </div>
+          <div>
+            <small>Min Stars</small>
+            <select id="review-stars" name="rstars" class="form-control form-control-sm mt-1">
+              <option value="" {% if not review_min_rating %}selected{% endif %}>Any</option>
+              {% for s in range(5,0,-1) %}
+              <option value="{{ s }}" {% if review_min_rating == s %}selected{% endif %}>{{ s }}+</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="d-flex align-items-end">
+            <button class="btn btn-sm btn-theme-primary px-4 w-100">Apply</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% if rating_breakdown %}
+  <div class="mb-3">
+    <div class="rating-summary-line mb-2">
+      {% for s in range(5,0,-1) %}
+        {% set is_active = review_min_rating == s %}
+        <a href="{{ url_for('products.detail',
+                            product_id=product.id,
+                            rpage=1,
+                            rsort=cur_sort,
+                            rstars=s) }}"
+           class="btn btn-sm rating-summary-pill">
+          {{ s }}★ <span class="count">{{ rating_breakdown.get(s,0) }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
   {% if reviews %}
+    {% if total_review_pages and total_review_pages > 1 %}
+    <nav aria-label="Review pagination" class="mb-2">
+      <ul class="pagination pagination-modern">
+        <li class="page-item {% if review_page <= 1 %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('products.detail', product_id=product.id, rpage=review_page-1) }}">Previous</a>
+        </li>
+        {% for p in range(1, total_review_pages + 1) %}
+        <li class="page-item {% if p == review_page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('products.detail', product_id=product.id, rpage=p) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {% if review_page >= total_review_pages %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('products.detail', product_id=product.id, rpage=review_page+1) }}">Next</a>
+        </li>
+      </ul>
+    </nav>
+    {% endif %}
     <div class="list-group">
       {% for review in reviews %}
         <div class="list-group-item">
@@ -123,21 +259,71 @@
             <div>
               <strong>{{ review.firstname }} {{ review.lastname }}</strong>
               <span class="ml-2">⭐ {{ review.rating }}</span>
+              {% if review.verified %}
+                <span class="badge badge-success ml-2">Verified purchase</span>
+              {% endif %}
+              {% if review.helpful_rank and review.helpful_rank <= 3 and review.helpful_count > 0 %}
+                <span class="badge badge-info ml-2">Most helpful</span>
+              {% endif %}
             </div>
             <small class="text-muted">{{ review.created_at }}</small>
           </div>
           <p class="mb-1">{{ review.body }}</p>
+          <div class="d-flex align-items-center">
+            {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('social.toggle_helpful_vote') }}" class="mr-2">
+              <input type="hidden" name="review_type" value="product">
+              <input type="hidden" name="review_id" value="{{ review.review_id }}">
+              <input type="hidden" name="next" value="{{ request.full_path }}">
+              {% if review.user_voted %}
+                <input type="hidden" name="action" value="remove">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">
+                  Helpful ({{ review.helpful_count }}) ✓
+                </button>
+              {% else %}
+                <button type="submit" class="btn btn-sm btn-outline-success">
+                  Helpful ({{ review.helpful_count }})
+                </button>
+              {% endif %}
+            </form>
+            {% else %}
+              <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('users.login', next=request.full_path) }}">
+                Helpful ({{ review.helpful_count }})
+              </a>
+            {% endif %}
+          </div>
         </div>
       {% endfor %}
     </div>
+    {% if total_review_pages and total_review_pages > 1 %}
+    <nav aria-label="Review pagination bottom" class="mt-3">
+      <ul class="pagination pagination-modern">
+        <li class="page-item {% if review_page <= 1 %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('products.detail', product_id=product.id, rpage=review_page-1) }}">Previous</a>
+        </li>
+        {% for p in range(1, total_review_pages + 1) %}
+        <li class="page-item {% if p == review_page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('products.detail', product_id=product.id, rpage=p) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        <li class="page-item {% if review_page >= total_review_pages %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('products.detail', product_id=product.id, rpage=review_page+1) }}">Next</a>
+        </li>
+      </ul>
+    </nav>
+    {% endif %}
   {% else %}
     <p class="text-muted">No reviews yet.</p>
   {% endif %}
 
   <hr>
-  <h4>Suggested products</h4>
-  {% if suggestions %}
-    <div class="row">
+  <div class="card card-lift mt-4">
+    <div class="card-header">
+      <h4 class="mb-0 text-white">Suggested products</h4>
+    </div>
+    <div class="card-body">
+    {% if suggestions %}
+      <div class="row">
       {% for item in suggestions %}
         <div class="col-md-3 mb-3">
           <div class="card h-100">
@@ -155,9 +341,11 @@
           </div>
         </div>
       {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-muted mb-0">No similar products found.</p>
+    {% endif %}
     </div>
-  {% else %}
-    <p class="text-muted">No similar products found.</p>
-  {% endif %}
+  </div>
 </div>
 {% endblock %}

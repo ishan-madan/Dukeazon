@@ -105,7 +105,7 @@ ORDER BY p.id
         rows = app.db.execute(
             f'''
 WITH seller_ratings AS (
-    SELECT seller_id, AVG(rating)::float AS avg_rating
+    SELECT seller_id, AVG(rating)::float AS avg_rating, COUNT(*) AS review_count
     FROM seller_reviews
     GROUP BY seller_id
 )
@@ -119,7 +119,7 @@ SELECT
     p.available,
     p.image_link,
     p.creator_id,
-    MAX(sr.avg_rating) AS best_seller_rating,
+    MAX(CASE WHEN sr.review_count >= 3 THEN sr.avg_rating END) AS best_seller_rating,
     COALESCE(MIN(ps.price), p.price) AS listing_price
 FROM Products p
 LEFT JOIN ProductSeller ps

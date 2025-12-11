@@ -10,9 +10,8 @@
   {% for _ in range(stars) %}&#9733;{% endfor %}
   {% for _ in range(5 - stars) %}&#9734;{% endfor %}
   <small>
-    ({{ "%.2f"|format(rating_summary.avg_rating) }}
-     from {{ rating_summary.num_reviews }}
-     review{{ 's' if rating_summary.num_reviews != 1 else '' }})
+    {{ "%.2f"|format(rating_summary.avg_rating) }} avg •
+    {{ rating_summary.num_reviews }} review{{ 's' if rating_summary.num_reviews != 1 else '' }}
   </small>
 </p>
 {% else %}
@@ -29,6 +28,7 @@
       <th>User</th>
       <th>Rating</th>
       <th>Comment</th>
+      <th>Helpful</th>
       <th>Date</th>
     </tr>
   </thead>
@@ -41,7 +41,37 @@
         {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
         <small>({{ r.rating }})</small>
       </td>
-      <td>{{ r.body }}</td>
+      <td>
+        {{ r.body }}
+        {% if r.helpful_rank and r.helpful_rank <= 3 and r.helpful_count > 0 %}
+          <span class="badge badge-info ml-2">Most helpful</span>
+        {% endif %}
+      </td>
+      <td>
+        <div class="d-flex align-items-center">
+          {% if current_user.is_authenticated %}
+          <form method="post" action="{{ url_for('social.toggle_helpful_vote') }}" class="mr-2">
+            <input type="hidden" name="review_type" value="seller">
+            <input type="hidden" name="review_id" value="{{ r.seller_review_id }}">
+            <input type="hidden" name="next" value="{{ request.full_path }}">
+            {% if r.user_voted %}
+              <input type="hidden" name="action" value="remove">
+              <button type="submit" class="btn btn-sm btn-outline-secondary">
+                Helpful ({{ r.helpful_count }}) ✓
+              </button>
+            {% else %}
+              <button type="submit" class="btn btn-sm btn-outline-success">
+                Helpful ({{ r.helpful_count }})
+              </button>
+            {% endif %}
+          </form>
+          {% else %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('users.login', next=request.full_path) }}">
+              Helpful ({{ r.helpful_count }})
+            </a>
+          {% endif %}
+        </div>
+      </td>
       <td>{{ r.created_at }}</td>
     </tr>
     {% endfor %}
