@@ -6,6 +6,7 @@ import math
 from .models.product import Product
 from .models.purchase import Purchase
 from .models.product_seller import ProductSeller
+from .models.category import Category
 
 from flask import Blueprint
 bp = Blueprint('index', __name__)
@@ -13,27 +14,33 @@ bp = Blueprint('index', __name__)
 
 @bp.route('/')
 def index():
-                                          
-    products = Product.get_all(True)
+    category_id = request.args.get('category', type=int)
+    query = request.args.get('q', type=str)
+    sort = request.args.get('sort', default='price_asc', type=str)
+    rating_threshold = request.args.get('rating_threshold', type=float)
+
+    products = Product.search(category_id=category_id,
+                              search=query,
+                              sort=sort,
+                              available=True,
+                              rating_threshold=rating_threshold)
     per_page = 10
     page = request.args.get('page', 1, type=int)
 
     listings_by_product = ProductSeller.get_active_listings()
 
-                                                                              
-                                                                              
-                                                                        
-    active_product_ids = set(listings_by_product.keys())
-    shown_ids = set(p.id for p in products)
-    missing_ids = active_product_ids - shown_ids
-    if missing_ids:
-        for pid in missing_ids:
-            prod = Product.get(pid)
-            if prod:
-                products.append(prod)
+    if not category_id and not query and rating_threshold is None:
+        active_product_ids = set(listings_by_product.keys())
+        shown_ids = set(p.id for p in products)
+        missing_ids = active_product_ids - shown_ids
+        if missing_ids:
+            for pid in missing_ids:
+                prod = Product.get(pid)
+                if prod:
+                    products.append(prod)
 
-                                                
-    products.sort(key=lambda p: p.id)
+    reverse_sort = sort == 'price_desc'
+    products.sort(key=lambda p: (p.price, p.id), reverse=reverse_sort)
 
     total_products = len(products)
     total_pages = max(1, math.ceil(total_products / per_page)) if total_products else 1
@@ -76,5 +83,10 @@ def index():
                            page=page,
                            total_pages=total_pages,
                            page_numbers=list(range(1, total_pages + 1)),
-                           product_ratings=product_ratings
+                           product_ratings=product_ratings,
+                           categories=Category.get_all(),
+                           selected_category=category_id,
+                           query=query or '',
+                           sort=sort,
+                           rating_threshold=rating_threshold
                            )

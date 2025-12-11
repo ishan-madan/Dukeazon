@@ -2,13 +2,15 @@ from flask import current_app as app
 
 
 class Product:
-    def __init__(self, id, category_id, category_name, name, description, price, available, image_link, creator_id=None, best_seller_rating=None):
+    def __init__(self, id, category_id, category_name, name, description, price, available, image_link, creator_id=None, best_seller_rating=None, listing_price=None):
         self.id = id
         self.category_id = category_id
         self.category_name = category_name
         self.name = name
         self.description = description
-        self.price = price
+        self.base_price = price
+        # price shown to buyers should reflect the active seller offers when available
+        self.price = listing_price if listing_price is not None else price
         self.available = available
         self.image_link = image_link
         self.creator_id = creator_id
@@ -19,30 +21,67 @@ class Product:
     def get(id):
         rows = app.db.execute(
             '''
-SELECT id, category_id, category_name, name, description, price, available, image_link, creator_id
-FROM Products
-WHERE id = :id
+WITH active_prices AS (
+    SELECT product_id, MIN(price) AS min_price
+    FROM ProductSeller
+    WHERE is_active = TRUE AND quantity > 0
+    GROUP BY product_id
+)
+SELECT p.id,
+       p.category_id,
+       p.category_name,
+       p.name,
+       p.description,
+       p.price,
+       p.available,
+       p.image_link,
+       p.creator_id,
+       ap.min_price
+FROM Products p
+LEFT JOIN active_prices ap
+  ON ap.product_id = p.id
+WHERE p.id = :id
 ''',
             id=id)
-        return Product(*rows[0]) if rows else None
+        if not rows:
+            return None
+        row = rows[0]
+        return Product(*row[:-1], listing_price=row[-1])
 
     @staticmethod
     def get_all(available=True):
         rows = app.db.execute(
             '''
-SELECT id, category_id, category_name, name, description, price, available, image_link, creator_id
-FROM Products
-WHERE available = :available
-ORDER BY id
+WITH active_prices AS (
+    SELECT product_id, MIN(price) AS min_price
+    FROM ProductSeller
+    WHERE is_active = TRUE AND quantity > 0
+    GROUP BY product_id
+)
+SELECT p.id,
+       p.category_id,
+       p.category_name,
+       p.name,
+       p.description,
+       p.price,
+       p.available,
+       p.image_link,
+       p.creator_id,
+       ap.min_price
+FROM Products p
+LEFT JOIN active_prices ap
+  ON ap.product_id = p.id
+WHERE p.available = :available
+ORDER BY p.id
 ''',
             available=available)
-        return [Product(*row) for row in rows]
+        return [Product(*row[:-1], listing_price=row[-1]) for row in rows]
 
     @staticmethod
     def search(category_id=None, search=None, sort='price_asc', available=True, rating_threshold=None):
-        sort_clause = 'price ASC'
+        sort_clause = 'listing_price ASC'
         if sort == 'price_desc':
-            sort_clause = 'price DESC'
+            sort_clause = 'listing_price DESC'
 
         filters = []
         params = {}
@@ -80,7 +119,8 @@ SELECT
     p.available,
     p.image_link,
     p.creator_id,
-    MAX(sr.avg_rating) AS best_seller_rating
+    MAX(sr.avg_rating) AS best_seller_rating,
+    COALESCE(MIN(ps.price), p.price) AS listing_price
 FROM Products p
 LEFT JOIN ProductSeller ps
   ON ps.product_id = p.id
@@ -94,7 +134,7 @@ GROUP BY p.id, p.category_id, p.category_name, p.name, p.description, p.price, p
 ORDER BY {sort_clause}, p.id
 ''',
             **params)
-        return [Product(*row) for row in rows]
+        return [Product(*row[:-1], listing_price=row[-1]) for row in rows]
 
     @staticmethod
     def create(category_id, category_name, name, description, price, available, image_link, creator_id):
@@ -157,13 +197,30 @@ WHERE id = :id
             return []
         rows = app.db.execute(
             '''
-SELECT id, category_id, category_name, name, description, price, available, image_link, creator_id,
-       ABS(price - :price) AS price_gap
-FROM Products
-WHERE available = TRUE
-  AND id != :pid
-  AND category_id = :cid
-ORDER BY price_gap ASC, price ASC, id
+WITH active_prices AS (
+    SELECT product_id, MIN(price) AS min_price
+    FROM ProductSeller
+    WHERE is_active = TRUE AND quantity > 0
+    GROUP BY product_id
+)
+SELECT p.id,
+       p.category_id,
+       p.category_name,
+       p.name,
+       p.description,
+       p.price,
+       p.available,
+       p.image_link,
+       p.creator_id,
+       ABS(COALESCE(ap.min_price, p.price) - :price) AS price_gap,
+       COALESCE(ap.min_price, p.price) AS listing_price
+FROM Products p
+LEFT JOIN active_prices ap
+  ON ap.product_id = p.id
+WHERE p.available = TRUE
+  AND p.id != :pid
+  AND p.category_id = :cid
+ORDER BY price_gap ASC, COALESCE(ap.min_price, p.price) ASC, p.id
 LIMIT :limit
 ''',
             price=product.price,
@@ -173,7 +230,7 @@ LIMIT :limit
 
         suggestions = []
         for row in rows:
-            p = Product(*row[:9])
+            p = Product(*row[:9], listing_price=row[-1])
             p.price_gap = row[9]
             suggestions.append(p)
         return suggestions
