@@ -87,6 +87,49 @@
       background-color: var(--midnight-blue);
       color: #fff;
     }
+    .btn-theme-primary,
+    .btn-theme-ghost {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      border-radius: 0.5rem;
+      padding: 0.85rem 1.5rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      text-decoration: none;
+      text-align: center;
+    }
+    .btn-theme-primary {
+      background: linear-gradient(135deg, #0f2e4d, #123d66);
+      color: #fff;
+      border: none;
+      box-shadow: 0 4px 10px rgba(15, 46, 77, 0.25);
+    }
+    .btn-theme-primary:hover,
+    .btn-theme-primary:focus {
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(15, 46, 77, 0.35);
+    }
+    .btn-theme-primary:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(15, 46, 77, 0.3);
+    }
+    .btn-theme-ghost {
+      background: rgba(255, 255, 255, 0.2);
+      color: var(--midnight-blue);
+      border: 2px solid var(--midnight-blue);
+      box-shadow: none;
+    }
+    .btn-theme-ghost:hover,
+    .btn-theme-ghost:focus {
+      background: rgba(12, 65, 96, 0.08);
+      color: var(--dark-blue);
+      transform: translateY(-1px);
+    }
+    .btn-theme-ghost:active {
+      transform: translateY(0);
+    }
     a,
     .nav-tabs .nav-link {
       color: var(--blue-gray);
@@ -458,18 +501,19 @@
   </div>
 
   <script>
-    // Show flashed messages as toasts: fade in, then auto-dismiss after 4s.
+    // Show flashed messages as toasts: fade in, then auto-dismiss after 10s.
     (function() {
       $(function() {
         const $toasts = $('#toast-container .toast-message');
+        const DISPLAY_TIME_MS = 10000;
         $toasts.each(function(i) {
           const $t = $(this);
+          const showDelay = i * 150;
           // stagger appearance
-          setTimeout(function() { $t.fadeIn(200); }, i * 150);
-          // auto-hide after 4s + stagger
-          const hideDelay = 4000 + i * 150;
+          setTimeout(function() { $t.fadeIn(200); }, showDelay);
+          // auto-hide after 10s
           const hide = function() { $t.fadeOut(300, function() { $(this).remove(); }); };
-          setTimeout(hide, hideDelay);
+          setTimeout(hide, DISPLAY_TIME_MS + showDelay);
           // manual close
           $t.find('.close').on('click', hide);
         });

@@ -69,7 +69,7 @@ def register():
                          form.lastname.data,
                          form.address.data,
                          is_seller=is_seller):
-            flash('Congratulations, you are now a registered user!')
+            flash('Registration Successful. Please login to access your account', 'success')
             return redirect(url_for('users.login'))
     return render_template('register.html', title='Register', form=form)
 

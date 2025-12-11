@@ -243,7 +243,7 @@
                     </thead>
                     <tbody>
                       {% for order in orders %}
-                        <tr style="cursor: pointer;" onclick="window.location.href='{{ url_for('cart.order_detail', user_id=current_user.id, order_id=order.id) }}'">
+                        <tr style="cursor: pointer;" onclick='window.location.href={{ url_for("cart.order_detail", user_id=current_user.id, order_id=order.id) | tojson }}'>
                           <td><strong>#{{ order.id }}</strong></td>
                           <td>{{ order.created_at | friendly_datetime }}</td>
                           <td>{{ order.item_count }} {{ 'item' if order.item_count == 1 else 'items' }}</td>

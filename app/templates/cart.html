@@ -17,17 +17,6 @@
     </div>
   </div>
 </div>
-
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-  <div class="alert alert-info card-lift">
-    {% for message in messages %}
-      <div>{{ message }}</div>
-    {% endfor %}
-  </div>
-  {% endif %}
-{% endwith %}
-
 {% if items %}
   <div class="card card-lift mb-4">
     <div class="card-body p-0">

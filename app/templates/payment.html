@@ -11,23 +11,112 @@
         <div class="card-body">
           <p class="text-muted">Enter your payment method details. We do not store your card information.</p>
           <form method="post" action="{{ url_for('cart.payment', user_id=user_id) }}">
+            <style>
+              .cvv-input-group {
+                position: relative;
+                display: flex;
+                align-items: stretch;
+              }
+              #cvv {
+                flex: 1;
+                letter-spacing: 0.25em;
+              }
+              .cvv-toggle {
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                cursor: pointer;
+                color: #6c757d;
+                padding: 0;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+              }
+              .cvv-toggle:focus {
+                outline: none;
+              }
+              .cvv-toggle svg {
+                width: 22px;
+                height: 22px;
+                stroke: currentColor;
+                stroke-width: 1.8;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                fill: none;
+              }
+              #eyeOpen {
+                display: none;
+              }
+            </style>
             <div class="form-group">
               <label for="card_number">Card Number</label>
               <input type="text" id="card_number" name="card_number" class="form-control"
-                     value="{{ form_data.card_number }}" placeholder="1234 5678 9012 3456" required>
+                     value="{{ form_data.card_number }}" placeholder="1234 5678 9012 3456" required
+                     autocomplete="cc-number" inputmode="numeric" maxlength="19"
+                     oninput="formatCardNumber(this)">
             </div>
             <div class="form-row">
               <div class="form-group col-md-6">
                 <label for="expiration">Expiration Date</label>
                 <input type="text" id="expiration" name="expiration" class="form-control"
-                       value="{{ form_data.expiration }}" placeholder="MM/YY" required>
+                       value="{{ form_data.expiration }}" placeholder="MM/YY" required
+                       autocomplete="cc-exp" inputmode="numeric"
+                       oninput="formatExpiration(this)" maxlength="5">
               </div>
               <div class="form-group col-md-6">
                 <label for="cvv">Security Code (CVV)</label>
-                <input type="text" id="cvv" name="cvv" class="form-control"
-                       value="{{ form_data.cvv }}" placeholder="123" required>
+                <div class="cvv-input-group">
+                  <input type="password" id="cvv" name="cvv" class="form-control"
+                         value="{{ form_data.cvv }}" placeholder="123" required
+                         maxlength="4" autocomplete="cc-csc" inputmode="numeric">
+                  <button type="button" class="cvv-toggle" onclick="toggleCVV()" aria-label="Show CVV">
+                    <span class="sr-only">Toggle CVV visibility</span>
+                    <svg id="eyeClosed" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" fill="none" stroke="currentColor" stroke-width="2"/>
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <svg id="eyeOpen" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
+            <script>
+              function formatCardNumber(input) {
+                let value = input.value.replace(/\D/g, '').substring(0, 16);
+                const groups = value.match(/.{1,4}/g);
+                input.value = groups ? groups.join(' ') : value;
+              }
+
+              function formatExpiration(input) {
+                let value = input.value.replace(/\D/g, '').substring(0, 4);
+                if (value.length <= 2) {
+                  input.value = value.substring(0, 2);
+                } else if (value.length >= 3) {
+                  input.value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                } else if (value.length >= 2) {
+                  input.value = value.substring(0, 2) + '/';
+                } else {
+                  input.value = value;
+                }
+              }
+
+              function toggleCVV() {
+                const cvvInput = document.getElementById('cvv');
+                const toggleBtn = document.querySelector('.cvv-toggle');
+                const isHidden = cvvInput.type === 'password';
+                cvvInput.type = isHidden ? 'text' : 'password';
+                document.getElementById('eyeOpen').style.display = isHidden ? 'inline' : 'none';
+                document.getElementById('eyeClosed').style.display = isHidden ? 'none' : 'inline';
+                toggleBtn.setAttribute('aria-label', isHidden ? 'Hide CVV' : 'Show CVV');
+              }
+            </script>
 
             <hr class="my-4">
             <h5>Shipping Address</h5>

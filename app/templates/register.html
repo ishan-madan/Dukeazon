@@ -127,23 +127,8 @@
     display: block;
   }
 
-  button[type="submit"] {
-    width: 100%;
-    padding: 12px;
-    background: linear-gradient(135deg, #0f2e4d, #123d66);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    margin-top: 20px;
-  }
-
-  button[type="submit"]:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(15, 46, 77, 0.3);
+  .register-submit {
+    margin-top: 24px;
   }
 
   .form-section {
@@ -233,7 +218,7 @@
       </div>
     </div>
 
-    {{ form.submit() }}
+    {{ form.submit(class_='btn-theme-primary btn-block register-submit') }}
   </form>
 </div>
 
