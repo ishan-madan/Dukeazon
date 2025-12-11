@@ -86,7 +86,6 @@ db/setup.sh
 
 Re-run `./install.sh` (or `db/setup.sh`) whenever you want a clean database.
 
----
 
 ## $\textsf{\color{lightgreen} Running the Application}$
 
@@ -109,7 +108,6 @@ Key environment variables are stored in `.flaskenv` and automatically loaded by 
 
 Browse via `http://localhost:8080/`. Stop the server with `Ctrl+C`. Exit the Poetry shell with `exit`.
 
----
 
 ## $\textsf{\color{lightgreen} Database Management}$
 
@@ -128,7 +126,6 @@ poetry run psql $DB_NAME        # uses credentials from .flaskenv via environmen
 
 When editing the schema, modify `db/create.sql` and `db/load.sql`, then re-run `db/setup.sh`.
 
----
 
 ## $\textsf{\color{lightgreen} Using the Program}$
 
@@ -174,7 +171,20 @@ When editing the schema, modify `db/create.sql` and `db/load.sql`, then re-run `
    - Quick pop-up previews for buyer/seller info.
    - Search/filter purchase history by item.
 
----
+
+## $\textsf{\color{lightgreen} Languages and Utilities Used}$
+
+- **Python 3.12** – Primary backend language for the Flask application and server-side logic.
+- **Flask** – Python web framework used for routing, templates, and API endpoints.
+- **PostgreSQL** – Relational database for storing users, products, orders, subscriptions, and social interactions.
+- **SQL** – Queries for database interactions, including complex joins and transactional updates.
+- **HTML / CSS / JavaScript** – Frontend technologies for server-rendered UI and interactive elements.
+- **Jinja2** – Templating engine for dynamic HTML rendering.
+- **Poetry** – Python dependency management and virtual environment tool.
+- **psql** – Command-line interface for direct PostgreSQL database access and debugging.
+- **Git** – Version control and collaboration.
+- **Bash / Shell Scripts** – Used for setup (`install.sh`) and database initialization (`db/setup.sh`).
+
 
 ## $\textsf{\color{lightgreen} Notes}$
 
