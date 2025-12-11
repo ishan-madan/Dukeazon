@@ -14,8 +14,13 @@ def browse():
     category_id = request.args.get('category', type=int)
     query = request.args.get('q', type=str)
     sort = request.args.get('sort', default='price_asc', type=str)
+    rating_threshold = request.args.get('rating_threshold', type=float)
 
-    products = Product.search(category_id=category_id, search=query, sort=sort, available=True)
+    products = Product.search(category_id=category_id,
+                              search=query,
+                              sort=sort,
+                              available=True,
+                              rating_threshold=rating_threshold)
     categories = Category.get_all()
 
     return render_template('products.html',
@@ -23,7 +28,8 @@ def browse():
                            categories=categories,
                            selected_category=category_id,
                            query=query or '',
-                           sort=sort)
+                           sort=sort,
+                           rating_threshold=rating_threshold)
 
 
 @bp.route('/<int:product_id>', methods=['GET'])
@@ -33,10 +39,12 @@ def detail(product_id):
         abort(404)
     sellers = ProductSeller.get_active_by_product(product_id)
     reviews = ProductReview.get_for_product(product_id)
+    suggestions = Product.similar(product, limit=4)
     return render_template('product_detail.html',
                            product=product,
                            sellers=sellers,
-                           reviews=reviews)
+                           reviews=reviews,
+                           suggestions=suggestions)
 
 
 @bp.route('/new', methods=['GET', 'POST'])

@@ -6,6 +6,7 @@
   <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
   <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
   <script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/aptos">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/example.css') }}">
   <style>
     :root {
@@ -15,12 +16,13 @@
       --dark-blue: #071330;
     }
     body {
-      font-family: "Lato", sans-serif;
-      background-color: var(--misty-blue);
+      font-family: "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(180deg, #f8fbff 0%, #eef2f8 60%, #e4e8f0 100%);
       color: var(--dark-blue);
     }
     .navbar {
-      background-color: var(--midnight-blue);
+      background: linear-gradient(90deg, #0f2e4d, #123d66);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     }
     .navbar-brand-logo {
       height: 32px;
@@ -42,13 +44,16 @@
       background-color: var(--blue-gray);
     }
     .content-wrapper {
-      padding: 2rem;
+      padding: 2.5rem 2rem 3rem;
+      max-width: 1320px;
+      margin: 0 auto;
     }
     .card {
-      border: 1px solid var(--blue-gray);
+      border: none;
       background-color: #fff;
-      border-radius: 0.6rem;
-      box-shadow: 0 4px 12px rgba(7, 19, 48, 0.05);
+      border-radius: 1.2rem;
+      box-shadow: 0 20px 45px rgba(7, 19, 48, 0.08);
+      overflow: hidden;
     }
     .card-header {
       background-color: var(--midnight-blue);
@@ -87,13 +92,272 @@
     .nav-tabs .nav-link.active {
       border-color: var(--dark-blue);
     }
+    .nav-tabs .tab-icon-link {
+      display: inline-flex;
+      align-items: center;
+      font-weight: 600;
+      gap: 0.35rem;
+    }
+    .tab-icon-link svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+    .tab-icon-link:hover svg {
+      transform: translateY(-1px);
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1.5rem;
+      width: 100%;
+    }
+    @media (max-width: 1280px) {
+      .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 992px) {
+      .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 600px) {
+      .product-grid { grid-template-columns: 1fr; }
+    }
+    .product-card {
+      border: none;
+      border-radius: 1rem;
+      background: #fff;
+      box-shadow: 0 20px 40px rgba(12, 65, 96, 0.08);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .product-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 30px 50px rgba(7, 19, 48, 0.14);
+    }
+    .product-media {
+      position: relative;
+      width: 100%;
+      padding-top: 110%;
+      background-size: cover;
+      background-position: center;
+    }
+    .product-badge {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(7, 19, 48, 0.85);
+      color: #fff;
+      font-size: 0.78rem;
+      letter-spacing: 0.03em;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+    .product-details {
+      padding: 1.2rem 1.4rem 1.3rem;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .product-category {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--blue-gray);
+      margin-bottom: 0.4rem;
+    }
+    .product-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: var(--dark-blue);
+    }
+    .product-title a {
+      color: inherit;
+    }
+    .product-description {
+      font-size: 0.88rem;
+      color: #5f6b7a;
+      margin-bottom: 0.6rem;
+      min-height: 38px;
+    }
+    .product-rating {
+      font-size: 0.85rem;
+      margin-bottom: 0.8rem;
+      color: #f5c518;
+    }
+    .product-price {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--midnight-blue);
+      margin-bottom: 0.8rem;
+    }
+    .product-actions {
+      margin-top: auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .seller-chip {
+      background: #eef2f7;
+      border-radius: 999px;
+      padding: 0.4rem 0.85rem;
+      font-size: 0.85rem;
+      color: var(--midnight-blue);
+    }
+    .product-form-inline {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .product-form-inline input[type="number"] {
+      width: 64px;
+    }
+    .product-form-inline .btn {
+      white-space: nowrap;
+    }
+    @media (max-width: 576px) {
+      .product-grid {
+        grid-template-columns: 1fr;
+      }
+      .product-form-inline {
+        width: 100%;
+      }
+      .product-form-inline input[type="number"] {
+        flex: 1;
+      }
+      .product-form-inline .btn {
+        flex: 1;
+      }
+    }
+    .pagination-modern {
+      display: inline-flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 999px;
+      box-shadow: inset 0 0 0 1px #d8e0ec;
+      overflow: hidden;
+    }
+    .pagination-modern .page-item {
+      margin: 0;
+    }
+    .pagination-modern .page-link {
+      border: none;
+      background: transparent;
+      color: var(--midnight-blue);
+      padding: 0.45rem 0.9rem;
+      font-weight: 600;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .pagination-modern .page-link:hover {
+      background: rgba(12, 65, 96, 0.1);
+      color: var(--dark-blue);
+    }
+    .pagination-modern .page-item.active .page-link {
+      background: var(--midnight-blue);
+      color: #fff;
+      border-radius: 999px;
+    }
+    .pagination-modern .page-item.disabled .page-link {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .hero-panel {
+      background: linear-gradient(135deg, #0c4160, #738fa7);
+      color: #fff;
+      border-radius: 1.4rem;
+      padding: 1.8rem 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      box-shadow: 0 20px 45px rgba(7, 19, 48, 0.18);
+      margin-bottom: 1.5rem;
+    }
+    .hero-panel .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      font-size: 0.75rem;
+      opacity: 0.85;
+    }
+    .hero-panel h1,
+    .hero-panel h2 {
+      color: #fff;
+    }
+    .hero-panel .muted {
+      color: rgba(255, 255, 255, 0.8);
+    }
+    .hero-total {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    .card-lift {
+      border-radius: 1.2rem;
+      border: none;
+      box-shadow: 0 18px 40px rgba(7, 19, 48, 0.08);
+    }
+    .table-modern thead {
+      background: #f2f5f9;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+    }
+    .table-modern th,
+    .table-modern td {
+      vertical-align: middle;
+      border-top: none;
+      padding: 1rem;
+    }
+    .table-modern tbody tr + tr {
+      border-top: 1px solid #edf0f6;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .status-pill.success { background: rgba(46, 204, 113, 0.15); color: #1f8a4d; }
+    .status-pill.warning { background: rgba(255, 193, 7, 0.18); color: #a06b00; }
+    .status-pill.info { background: rgba(23, 162, 184, 0.18); color: #0b5c6b; }
+    .order-card {
+      border-radius: 1.1rem;
+      border: none;
+      padding: 1.5rem;
+      background: #fff;
+      box-shadow: 0 16px 34px rgba(7, 19, 48, 0.08);
+      margin-bottom: 1.2rem;
+    }
+    .order-card:hover {
+      transform: translateY(-4px);
+      transition: transform 0.2s ease;
+    }
+    .order-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.9rem;
+      color: #5f6b7a;
+    }
+    .order-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
   </style>
 </head>
 
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
     <a class="navbar-brand font-weight-bold text-white d-flex align-items-center" href="{{ url_for('index.index') }}">
-      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1f/Duke_University_Seal.svg"
+      <img src="{{ url_for('static', filename='img/duke-shield.svg') }}"
            alt="Duke crest" class="navbar-brand-logo">
       <span>Dukeazon</span>
     </a>

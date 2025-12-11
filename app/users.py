@@ -78,16 +78,20 @@ def logout():
 
 from flask_login import login_required
 from .models.purchase import Purchase
+from .models.order import Order
 
 @bp.route('/purchases')
 @login_required
 def purchases():
-    """Show current user's purchase history."""
-    purchases = Purchase.get_all_detailed_by_uid(current_user.id)
-    return render_template('user_purchases.html',
-                           title='My Purchases',
-                           purchases=purchases,
-                           user=current_user)
+    q = request.args.get("q")  # GET parameter ?q=abc
+    purchases = Order.get_user_purchases(current_user.id, q=q)
+    
+    return render_template(
+        'purchases.html',
+        title="My Purchases",
+        purchases=purchases,
+        q=q
+    )
 
 class UpdateAccountForm(FlaskForm):
     firstname = StringField('First Name', validators=[DataRequired()])
@@ -133,7 +137,14 @@ def account():
 
                             
     if balance_form.validate_on_submit():
-        amount = float(balance_form.amount.data)
+        try:
+            amount = float(balance_form.amount.data)
+        except ValueError:
+            flash('Please enter a numeric amount.', 'danger')
+            return redirect(url_for('users.account'))
+        if amount <= 0:
+            flash('Amount must be positive.', 'danger')
+            return redirect(url_for('users.account'))
 
                    
         if balance_form.submit_add.data:

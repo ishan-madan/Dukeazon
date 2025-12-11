@@ -261,3 +261,47 @@ UPDATE Orders SET status = 'shipped' WHERE id = :order_id
                 conn.execute(text("""
 UPDATE Orders SET status = 'pending' WHERE id = :order_id
 """), {"order_id": order_id})
+
+@staticmethod
+    def get_user_purchases(user_id, q=None):
+        base_sql = """
+        SELECT oi.product_id,
+        p.name AS product_name,
+        oi.quantity,
+        oi.unit_price,
+        oi.subtotal,
+        oi.fulfilled,
+        oi.fulfilled_at,
+        oi.order_id,
+        o.created_at AS order_date
+        FROM OrderItems oi
+        JOIN Orders o ON oi.order_id = o.id
+        JOIN Products p ON oi.product_id = p.id
+        WHERE o.user_id = :user_id
+        """
+        params = {"user_id": user_id}
+
+        # If user provided a search keyword, apply filtering
+        if q:
+            base_sql += " AND p.name ILIKE :q"
+            params["q"] = f"%{q}%"
+
+        # Sort latest → oldest orders
+        base_sql += " ORDER BY o.created_at DESC"
+
+        rows = app.db.execute(base_sql, **params)
+
+        result = []
+        for row in rows:
+            result.append({
+                "product_id": row[0],
+                "product_name": row[1],
+                "quantity": row[2],
+                "unit_price": row[3],
+                "subtotal": row[4],
+                "fulfilled": row[5],
+                "fulfilled_at": row[6],
+                "order_id": row[7],
+                "order_date": row[8]
+            })
+        return result

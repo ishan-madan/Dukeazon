@@ -71,35 +71,29 @@ WHERE id = :id
                               id=id)
         return User(*(rows[0])) if rows else None
 
-@staticmethod
-def update_account(uid, firstname, lastname, email, address):
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("""
-        UPDATE users
-        SET firstname = %s, lastname = %s, email = %s, address = %s
-        WHERE id = %s
-    """, (firstname, lastname, email, address, uid))
-    db.commit()
+    @staticmethod
+    def update_account(uid, firstname, lastname, email, address):
+        app.db.execute("""
+UPDATE Users
+SET firstname = :firstname,
+    lastname = :lastname,
+    email = :email,
+    address = :address
+WHERE id = :uid
+""", firstname=firstname, lastname=lastname, email=email, address=address, uid=uid)
 
-@staticmethod
-def add_balance(uid, amount):
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("""
-        UPDATE users
-        SET balance = balance + %s
-        WHERE id = %s
-    """, (amount, uid))
-    db.commit()
+    @staticmethod
+    def add_balance(uid, amount):
+        app.db.execute("""
+UPDATE Users
+SET balance = balance + :amount
+WHERE id = :uid
+""", amount=amount, uid=uid)
 
-@staticmethod
-def withdraw_balance(uid, amount):
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("""
-        UPDATE users
-        SET balance = balance - %s
-        WHERE id = %s
-    """, (amount, uid))
-    db.commit()
+    @staticmethod
+    def withdraw_balance(uid, amount):
+        app.db.execute("""
+UPDATE Users
+SET balance = balance - :amount
+WHERE id = :uid
+""", amount=amount, uid=uid)
