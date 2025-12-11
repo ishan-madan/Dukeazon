@@ -1,12 +1,16 @@
 from flask_login import UserMixin
 from flask import current_app as app
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timedelta, timezone
+import secrets
 
 from .. import login
 
 
 class User(UserMixin):
-    def __init__(self, id, email, firstname, lastname, address, balance, is_seller=False, created_at=None):
+    def __init__(self, id, email, firstname, lastname, address, balance,
+                 is_seller=False, created_at=None, email_verified=False,
+                 verification_token=None, verification_sent_at=None):
         self.id = id
         self.email = email
         self.firstname = firstname
@@ -15,11 +19,15 @@ class User(UserMixin):
         self.balance = balance
         self.is_seller = is_seller
         self.created_at = created_at
+        self.email_verified = email_verified
+        self.verification_token = verification_token
+        self.verification_sent_at = verification_sent_at
 
     @staticmethod
     def get_by_auth(email, password):
         rows = app.db.execute("""
-SELECT password, id, email, firstname, lastname, address, balance, is_seller, created_at
+SELECT password, id, email, firstname, lastname, address, balance, is_seller,
+       created_at, email_verified, verification_token, verification_sent_at
 FROM Users
 WHERE email = :email
 """,
@@ -63,10 +71,49 @@ RETURNING id
             return None
 
     @staticmethod
+    def issue_verification_token(uid):
+        token = secrets.token_urlsafe(32)
+        app.db.execute("""
+UPDATE Users
+SET verification_token = :token,
+    verification_sent_at = now(),
+    email_verified = FALSE
+WHERE id = :uid
+""", token=token, uid=uid)
+        return token
+
+    @staticmethod
+    def mark_email_verified(token, max_age_hours=48):
+        if not token:
+            return None
+        rows = app.db.execute("""
+SELECT id, verification_sent_at
+FROM Users
+WHERE verification_token = :token
+""", token=token)
+        if not rows:
+            return None
+        uid, sent_at = rows[0]
+        if sent_at:
+            if sent_at.tzinfo is None:
+                sent_at = sent_at.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) - sent_at > timedelta(hours=max_age_hours):
+                return None
+        app.db.execute("""
+UPDATE Users
+SET email_verified = TRUE,
+    verification_token = NULL,
+    verification_sent_at = NULL
+WHERE id = :uid
+""", uid=uid)
+        return User.get(uid)
+
+    @staticmethod
     @login.user_loader
     def get(id):
         rows = app.db.execute("""
-SELECT id, email, firstname, lastname, address, balance, is_seller, created_at
+SELECT id, email, firstname, lastname, address, balance, is_seller,
+       created_at, email_verified, verification_token, verification_sent_at
 FROM Users
 WHERE id = :id
 """,

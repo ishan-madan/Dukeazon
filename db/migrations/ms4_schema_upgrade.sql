@@ -42,6 +42,24 @@ ALTER TABLE IF EXISTS Users
 ALTER TABLE IF EXISTS Users
     ALTER COLUMN created_at SET DEFAULT now();
 
+ALTER TABLE IF EXISTS Users
+    ADD COLUMN IF NOT EXISTS email_verified BOOLEAN;
+
+UPDATE Users
+SET email_verified = COALESCE(email_verified, FALSE);
+
+ALTER TABLE IF EXISTS Users
+    ALTER COLUMN email_verified SET NOT NULL;
+
+ALTER TABLE IF EXISTS Users
+    ALTER COLUMN email_verified SET DEFAULT FALSE;
+
+ALTER TABLE IF EXISTS Users
+    ADD COLUMN IF NOT EXISTS verification_token TEXT;
+
+ALTER TABLE IF EXISTS Users
+    ADD COLUMN IF NOT EXISTS verification_sent_at TIMESTAMPTZ;
+
 -- ------------------------------------------------------------------
 -- Categories table + seed data (idempotent).
 -- ------------------------------------------------------------------

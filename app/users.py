@@ -5,6 +5,9 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, RadioField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, Length, Regexp
 from flask import current_app as app
+import smtplib
+import ssl
+from email.message import EmailMessage
 from .models.product_review import SellerReview
 
 from .models.user import User
@@ -61,6 +64,41 @@ def parse_address(address):
             result['zip_code'] = ' '.join(tokens[1:])
     return result
 
+
+def _send_email(recipient, subject, body):
+    server = app.config.get('MAIL_SERVER')
+    sender = app.config.get('MAIL_FROM')
+    if not server or not sender:
+        app.logger.info("Email to %s\nSubject: %s\n\n%s", recipient, subject, body)
+        return
+    port = app.config.get('MAIL_PORT', 587)
+    username = app.config.get('MAIL_USERNAME')
+    password = app.config.get('MAIL_PASSWORD')
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = sender
+    msg['To'] = recipient
+    msg.set_content(body)
+    context = ssl.create_default_context()
+    with smtplib.SMTP(server, port) as smtp:
+        if app.config.get('MAIL_USE_TLS', True):
+            smtp.starttls(context=context)
+        if username and password:
+            smtp.login(username, password)
+        smtp.send_message(msg)
+
+
+def _send_verification_email(user, token):
+    verify_url = url_for('users.verify_email', token=token, _external=True)
+    subject = "Verify your Dukeazon account"
+    body = (
+        f"Hello {user.firstname or user.email},\n\n"
+        "Thank you for creating an account on Dukeazon. Please verify your email "
+        f"address by clicking the link below:\n\n{verify_url}\n\n"
+        "If you did not create this account, you can ignore this email."
+    )
+    _send_email(user.email, subject, body)
+
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
@@ -77,6 +115,11 @@ def login():
         user = User.get_by_auth(form.email.data, form.password.data)
         if user is None:
             flash('Invalid email or password')
+            return redirect(url_for('users.login'))
+        if not user.email_verified:
+            token = User.issue_verification_token(user.id)
+            _send_verification_email(user, token)
+            flash('Please verify your email address. A new verification link has been sent.', 'warning')
             return redirect(url_for('users.login'))
         login_user(user)
         next_page = request.args.get('next')
@@ -121,13 +164,16 @@ def register():
                                       form.city.data,
                                       form.state.data,
                                       form.zip_code.data)
-        if User.register(form.email.data,
-                         form.password.data,
-                         form.firstname.data,
-                         form.lastname.data,
-                         address,
-                         is_seller=is_seller):
-            flash('Registration Successful. Please login to access your account', 'success')
+        new_user = User.register(form.email.data,
+                                 form.password.data,
+                                 form.firstname.data,
+                                 form.lastname.data,
+                                 address,
+                                 is_seller=is_seller)
+        if new_user:
+            token = User.issue_verification_token(new_user.id)
+            _send_verification_email(new_user, token)
+            flash('Registration successful! Check your email to verify your account before logging in.', 'success')
             return redirect(url_for('users.login'))
     return render_template('register.html', title='Register', form=form)
 
@@ -274,6 +320,16 @@ def cancel_subscription(subscription_id):
     else:
         flash('Unable to cancel that subscription.', 'danger')
     return redirect(url_for('users.account'))
+
+
+@bp.route('/verify-email/<token>')
+def verify_email(token):
+    user = User.mark_email_verified(token)
+    if user:
+        flash('Email verified! You can now log in.', 'success')
+    else:
+        flash('That verification link is invalid or has expired. Please log in to request a new link.', 'danger')
+    return redirect(url_for('users.login'))
 
 @bp.route('/user/<int:user_id>')
 def public_profile(user_id):

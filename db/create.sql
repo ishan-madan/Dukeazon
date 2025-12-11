@@ -10,7 +10,10 @@ CREATE TABLE Users (
     address VARCHAR(255) NOT NULL,
     balance DECIMAL(12,2) NOT NULL DEFAULT 0,
     is_seller BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    verification_token TEXT,
+    verification_sent_at TIMESTAMPTZ
 );
 
 CREATE TABLE Categories (
