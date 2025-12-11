@@ -10,29 +10,6 @@ from .models.subscription import Subscription
 bp = Blueprint('products', __name__, url_prefix='/products')
 
 
-@bp.route('/', methods=['GET'])
-def browse():
-    category_id = request.args.get('category', type=int)
-    query = request.args.get('q', type=str)
-    sort = request.args.get('sort', default='price_asc', type=str)
-    rating_threshold = request.args.get('rating_threshold', type=float)
-
-    products = Product.search(category_id=category_id,
-                              search=query,
-                              sort=sort,
-                              available=True,
-                              rating_threshold=rating_threshold)
-    categories = Category.get_all()
-
-    return render_template('products.html',
-                           products=products,
-                           categories=categories,
-                           selected_category=category_id,
-                           query=query or '',
-                           sort=sort,
-                           rating_threshold=rating_threshold)
-
-
 @bp.route('/<int:product_id>', methods=['GET'])
 def detail(product_id):
     product = Product.get(product_id)

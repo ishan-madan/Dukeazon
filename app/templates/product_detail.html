@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
-  <a href="{{ url_for('products.browse') }}">&larr; Back to products</a>
+  <a href="{{ url_for('index.index') }}">&larr; Back to products</a>
   <div class="row mt-3">
     <div class="col-md-5 mb-3">
       <img src="{{ product.image_link or 'https://via.placeholder.com/500?text=No+Image' }}"
