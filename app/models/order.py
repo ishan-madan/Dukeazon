@@ -154,10 +154,11 @@ WHERE id = :order_id AND user_id = :user_id
         }
 
     @staticmethod
-    def list_items_for_seller(seller_id, q=None):
+    def list_items_for_seller(seller_id, q=None, status=None):
         """
         Return all order items that belong to a given seller. If q is provided,
         filter by order id or buyer name (case-insensitive partial match).
+        If status is provided, limit to orders with Orders.status matching it.
         Results are ordered by order created_at DESC then item id.
         """
         sql = """
@@ -193,6 +194,9 @@ WHERE oi.seller_id = :seller_id
         if q:
             sql += " AND (CAST(o.id AS TEXT) ILIKE :q_like OR (bu.firstname || ' ' || bu.lastname) ILIKE :q_like)"
             params["q_like"] = f"%{q}%"
+        if status:
+            sql += " AND o.status = :status"
+            params["status"] = status
         sql += " ORDER BY o.created_at DESC, oi.id"
 
         rows = app.db.execute(sql, **params)

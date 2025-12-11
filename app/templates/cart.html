@@ -41,7 +41,13 @@
                 <strong>{{ item.product_name }}</strong>
                 <div class="text-muted small">Listing #{{ item.listing_id }}</div>
               </td>
-              <td>{{ item.seller_name }}</td>
+              <td>
+                <a href="{{ url_for('users.public_profile', user_id=item.seller_id) }}"
+                   class="profile-popup-link"
+                   data-profile-title="{{ item.seller_name or ('Seller #' ~ item.seller_id) }}">
+                  {{ item.seller_name }}
+                </a>
+              </td>
               <td class="text-right">${{ "{:,.2f}".format(item.unit_price) }}</td>
               <td>
                 <form class="d-flex align-items-center product-form-inline" method="post"
@@ -119,7 +125,13 @@
                 <strong>{{ item.product_name }}</strong>
                 <div class="text-muted small">Saved {{ item.saved_at|friendly_datetime }}</div>
               </td>
-              <td>{{ item.seller_name }}</td>
+              <td>
+                <a href="{{ url_for('users.public_profile', user_id=item.seller_id) }}"
+                   class="profile-popup-link"
+                   data-profile-title="{{ item.seller_name or ('Seller #' ~ item.seller_id) }}">
+                  {{ item.seller_name }}
+                </a>
+              </td>
               <td class="text-right">${{ "{:,.2f}".format(item.unit_price) }}</td>
               <td>{{ item.quantity }}</td>
               <td class="text-center">

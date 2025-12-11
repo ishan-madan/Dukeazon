@@ -68,7 +68,13 @@
             <tr>
               <th scope="row">{{ loop.index }}</th>
               <td>{{ item.product_name }}</td>
-              <td>{{ item.seller_name }}</td>
+              <td>
+                <a href="{{ url_for('users.public_profile', user_id=item.seller_id) }}"
+                   class="profile-popup-link"
+                   data-profile-title="{{ item.seller_name }}">
+                  {{ item.seller_name }}
+                </a>
+              </td>
               <td class="text-right">${{ "{:,.2f}".format(item.unit_price) }}</td>
               <td>{{ item.quantity }}</td>
               <td class="text-right">${{ "{:,.2f}".format(item.subtotal) }}</td>

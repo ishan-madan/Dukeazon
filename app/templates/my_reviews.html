@@ -52,7 +52,7 @@
       </td>
       <td>{{ r.body }}</td>
       <td>
-        {{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if r.created_at else '—' }}
+        {{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %m/%d/%Y') if r.created_at else '—' }}
       </td>
       <td>
         <a href="{{ url_for('social.product_review', product_id=r.product_id) }}"
@@ -96,7 +96,7 @@
       </td>
       <td>{{ r.body }}</td>
       <td>
-        {{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if r.created_at else '—' }}
+        {{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %m/%d/%Y') if r.created_at else '—' }}
       </td>
       <td>
         <a href="{{ url_for('social.seller_review', seller_id=r.seller_id) }}"
@@ -135,7 +135,7 @@
         <small>{{ r.rating }}</small>
       </td>
       <td>{{ r.body }}</td>
-      <td>{{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if r.created_at else '—' }}</td>
+      <td>{{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %m/%d/%Y') if r.created_at else '—' }}</td>
     </tr>
     {% endfor %}
   </tbody>

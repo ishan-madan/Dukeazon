@@ -6,7 +6,7 @@
     <div class="eyebrow mb-2">User Profile</div>
     <h1 class="mb-1">{{ user.firstname }} {{ user.lastname }}</h1>
     <p class="muted mb-0">Member since {{
-          user.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y')
+          user.created_at.astimezone(eastern).strftime('%I:%M %p, %m/%d/%Y')
           if user.created_at else ('User #' ~ user.id)
         }}</p>
   </div>

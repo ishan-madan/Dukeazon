@@ -1,2 +1,140 @@
-0,1,0,5,"Amazing vanilla ice cream!",2024-11-01 10:00:00
-1,2,0,4,"Chocolate is good but a bit sweet.",2024-11-02 14:30:00
+1,33,25,3,Five stars!,2024-07-25 10:00:00
+2,36,33,3,Exceeded expectations.,2024-09-08 14:00:00
+3,6,2,3,Highly recommend.,2024-06-29 07:00:00
+5,26,31,3,Five stars!,2024-09-17 02:00:00
+6,26,14,4,Very satisfied.,2024-07-16 18:00:00
+7,29,29,3,Color was slightly off.,2024-08-10 16:00:00
+8,29,15,3,Exceeded expectations.,2024-06-05 22:00:00
+9,34,7,3,Loved it!,2024-06-24 09:00:00
+10,33,11,4,Packaging could be better.,2024-10-15 20:00:00
+11,28,3,3,Color was slightly off.,2024-08-30 04:00:00
+12,17,37,4,Great quality and fast shipping.,2024-11-01 11:00:00
+13,6,23,4,Not worth the price.,2024-10-23 18:00:00
+14,17,15,5,Exceeded expectations.,2024-06-09 07:00:00
+15,8,18,3,Highly recommend.,2024-09-30 22:00:00
+16,39,17,3,Loved it!,2024-08-18 07:00:00
+17,21,2,4,Great quality and fast shipping.,2024-07-02 07:00:00
+18,52,37,5,Exceeded expectations.,2024-10-17 19:00:00
+19,17,39,5,Not worth the price.,2024-09-08 11:00:00
+20,52,18,4,Would buy again.,2024-10-03 23:00:00
+22,52,11,4,Decent overall.,2024-09-22 01:00:00
+23,52,2,5,Packaging could be better.,2024-09-06 16:00:00
+24,33,38,5,Decent overall.,2024-08-14 16:00:00
+25,33,35,5,Color was slightly off.,2024-10-12 19:00:00
+26,34,14,5,Would buy again.,2024-07-07 09:00:00
+27,36,37,3,Color was slightly off.,2024-10-14 23:00:00
+28,46,33,3,Amazing craftsmanship.,2024-09-07 06:00:00
+29,10,14,3,Packaging could be better.,2024-07-02 15:00:00
+30,46,23,3,Works as intended.,2024-10-22 18:00:00
+31,51,21,5,Very satisfied.,2024-09-28 10:00:00
+32,17,38,5,Five stars!,2024-06-27 09:00:00
+33,21,11,4,Exactly as described.,2024-11-09 14:00:00
+34,17,17,4,Exceeded expectations.,2024-08-14 19:00:00
+35,40,29,4,Exactly as described.,2024-08-12 12:00:00
+36,31,10,4,Very satisfied.,2024-06-14 23:00:00
+37,42,14,4,Would buy again.,2024-09-18 18:00:00
+38,54,35,3,Great quality and fast shipping.,2024-07-02 09:00:00
+39,42,19,5,Decent overall.,2024-07-13 04:00:00
+40,46,31,5,Solid purchase.,2024-07-01 19:00:00
+41,6,7,4,Not worth the price.,2024-06-25 15:00:00
+42,31,15,3,Packaging could be better.,2024-10-19 21:00:00
+43,10,7,5,Works as intended.,2024-09-17 17:00:00
+44,52,39,3,Color was slightly off.,2024-08-15 12:00:00
+45,5,13,3,Exactly as described.,2024-07-31 13:00:00
+46,3,23,5,Solid purchase.,2024-09-23 06:00:00
+47,54,5,3,Very satisfied.,2024-09-24 02:00:00
+48,24,22,4,Would buy again.,2024-10-02 21:00:00
+49,31,17,3,Very satisfied.,2024-10-20 19:00:00
+50,13,3,5,Solid purchase.,2024-07-28 14:00:00
+51,26,5,4,Great quality and fast shipping.,2024-08-11 19:00:00
+52,52,34,3,Highly recommend.,2024-06-13 14:00:00
+53,29,9,5,Very satisfied.,2024-11-14 23:00:00
+54,8,13,5,Exactly as described.,2024-07-31 11:00:00
+55,13,10,4,Loved it!,2024-10-07 05:00:00
+56,51,27,5,Would buy again.,2024-10-11 15:00:00
+57,10,15,3,Highly recommend.,2024-07-26 15:00:00
+58,17,6,5,Not worth the price.,2024-07-15 02:00:00
+59,42,29,5,Decent overall.,2024-06-30 13:00:00
+60,17,3,3,Solid purchase.,2024-08-17 17:00:00
+61,36,34,3,Color was slightly off.,2024-06-22 14:00:00
+62,52,6,4,Five stars!,2024-08-02 18:00:00
+63,43,18,4,Five stars!,2024-10-04 20:00:00
+64,54,34,4,Exceeded expectations.,2024-06-21 17:00:00
+65,24,33,5,Works as intended.,2024-06-26 18:00:00
+66,51,29,3,Very satisfied.,2024-08-04 23:00:00
+67,10,9,3,Works as intended.,2024-08-30 13:00:00
+68,22,39,4,Highly recommend.,2024-09-09 01:00:00
+69,34,21,4,Exceeded expectations.,2024-11-02 18:00:00
+70,2,10,3,Five stars!,2024-09-10 11:00:00
+71,24,19,4,Packaging could be better.,2024-06-07 14:00:00
+72,40,6,3,Exactly as described.,2024-08-03 02:00:00
+73,28,11,3,Would buy again.,2024-09-25 21:00:00
+74,29,23,3,Highly recommend.,2024-10-22 23:00:00
+75,36,15,4,Color was slightly off.,2024-07-10 06:00:00
+76,51,10,5,Great quality and fast shipping.,2024-08-27 13:00:00
+77,35,22,4,Works as intended.,2024-08-26 14:00:00
+78,46,22,4,Exactly as described.,2024-07-26 16:00:00
+79,26,26,5,Great quality and fast shipping.,2024-07-02 09:00:00
+80,28,23,5,Solid purchase.,2024-09-21 08:00:00
+81,36,3,3,Exceeded expectations.,2024-08-20 05:00:00
+82,22,7,5,Loved it!,2024-09-22 06:00:00
+83,29,35,3,Loved it!,2024-10-15 00:00:00
+84,40,14,3,Loved it!,2024-07-07 20:00:00
+85,51,5,4,Great quality and fast shipping.,2024-09-27 07:00:00
+86,16,15,3,Five stars!,2024-10-20 09:00:00
+87,35,21,3,Five stars!,2024-10-30 09:00:00
+88,33,13,5,Very satisfied.,2024-08-24 04:00:00
+89,2,3,3,Exceeded expectations.,2024-07-29 11:00:00
+90,35,17,4,Loved it!,2024-10-17 05:00:00
+91,8,31,4,Highly recommend.,2024-09-17 07:00:00
+92,2,37,5,Great quality and fast shipping.,2024-10-13 21:00:00
+93,39,35,5,Would buy again.,2024-06-28 07:00:00
+94,24,6,4,Would buy again.,2024-08-05 21:00:00
+95,52,13,4,Loved it!,2024-09-15 12:00:00
+96,43,1,5,Not worth the price.,2024-06-29 07:00:00
+97,11,27,3,Not worth the price.,2024-06-05 20:00:00
+98,22,17,4,Very satisfied.,2024-10-13 14:00:00
+99,51,26,5,Solid purchase.,2024-07-05 05:00:00
+100,21,29,3,Five stars!,2024-11-03 15:00:00
+101,36,35,4,Not worth the price.,2024-10-14 05:00:00
+102,17,26,4,Highly recommend.,2024-10-20 07:00:00
+103,15,7,3,Amazing craftsmanship.,2024-09-26 04:00:00
+104,24,37,5,Very satisfied.,2024-10-28 16:00:00
+105,6,29,5,Five stars!,2024-11-10 00:00:00
+106,39,29,4,Exactly as described.,2024-06-30 15:00:00
+107,43,2,4,Solid purchase.,2024-08-17 05:00:00
+108,28,6,4,Exceeded expectations.,2024-07-19 11:00:00
+109,46,9,3,Packaging could be better.,2024-10-05 15:00:00
+110,15,15,3,Would buy again.,2024-06-22 22:00:00
+111,3,2,4,Color was slightly off.,2024-08-22 11:00:00
+112,54,26,4,Decent overall.,2024-10-08 12:00:00
+113,16,34,5,Not worth the price.,2024-10-10 12:00:00
+114,2,11,3,Works as intended.,2024-09-22 21:00:00
+115,16,18,5,Works as intended.,2024-06-11 23:00:00
+116,42,27,4,Solid purchase.,2024-11-07 12:00:00
+117,42,1,4,Five stars!,2024-10-18 15:00:00
+119,11,2,4,Amazing craftsmanship.,2024-09-08 17:00:00
+120,3,30,5,Color was slightly off.,2024-08-13 19:00:00
+121,13,17,4,Highly recommend.,2024-10-20 18:00:00
+122,39,34,4,Exactly as described.,2024-06-11 05:00:00
+123,26,3,5,Not worth the price.,2024-08-18 02:00:00
+124,40,38,4,Solid purchase.,2024-06-30 18:00:00
+125,51,18,4,Decent overall.,2024-10-26 00:00:00
+126,22,27,4,Color was slightly off.,2024-07-01 20:00:00
+127,17,30,4,Color was slightly off.,2024-07-18 01:00:00
+128,13,34,5,Works as intended.,2024-06-22 17:00:00
+129,10,29,4,Five stars!,2024-10-30 16:00:00
+130,46,18,4,Exceeded expectations.,2024-06-15 02:00:00
+131,11,30,4,Decent overall.,2024-10-03 17:00:00
+132,13,29,3,Works as intended.,2024-10-30 18:00:00
+133,22,22,4,Would buy again.,2024-07-26 07:00:00
+134,51,39,5,Packaging could be better.,2024-08-22 17:00:00
+135,31,9,4,Highly recommend.,2024-10-03 04:00:00
+136,10,6,3,Would buy again.,2024-06-12 23:00:00
+137,40,27,3,Works as intended.,2024-10-15 19:00:00
+138,46,11,4,Exactly as described.,2024-11-03 07:00:00
+139,16,22,4,Amazing craftsmanship.,2024-08-14 10:00:00
+140,54,38,4,Amazing craftsmanship.,2024-08-17 05:00:00
+10000,1,25,5,Five stars!,2024-07-25 10:00:00
+10001,1,33,5,Exceeded expectations.,2024-09-08 14:00:00
+10002,1,2,5,Highly recommend.,2024-06-29 07:00:00
