@@ -440,22 +440,21 @@
             <!-- Seller Navigation Links -->
             <li class="nav-item"><a class="nav-link" href="{{ url_for('product_seller.seller_inventory', seller_id=current_user.id) }}">Inventory</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.seller_orders_view', seller_id=current_user.id) }}">Fulfillment</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('social.social_page') }}">Recent Feedback</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('social.my_reviews') }}">Reviews</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('users.search_profiles') }}">Search Profiles</a></li>
           {% else %}
             <!-- Buyer Navigation Links -->
             <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.cart', user_id=current_user.id) }}">Cart</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('cart.orders', user_id=current_user.id) }}">Orders</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('users.purchases') }}">All Purchases</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('social.my_reviews') }}">Reviews</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('social.social_page') }}">Feedback</a></li>
-            <li class="nav-item"><a class="nav-link" href="{{ url_for('users.purchases') }}">Purchases</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('social.social_page') }}">Recent Feedback</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ url_for('users.search_profiles') }}">Search Profiles</a></li>
           {% endif %}
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown"
              aria-haspopup="true" aria-expanded="false">
-            Hello {{ current_user.firstname }} (Acct #{{ current_user.id }})
+            Hello {{ current_user.firstname }}!
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
             <a class="dropdown-item" href="{{ url_for('users.account') }}">My Account</a>

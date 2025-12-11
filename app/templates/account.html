@@ -65,7 +65,7 @@
       <span class="role-pill {{ role_class }}">{{ role_label }}</span>
       <div class="muted small">
         Member since {{
-          user.created_at.strftime('%B %-d, %Y')
+          user.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y')
           if user.created_at else ('User #' ~ user.id)
         }}
       </div>

@@ -1,20 +1,68 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Seller Profile</h2>
+{% set review_count = reviews|length %}
+{% set total_stars = reviews|sum(attribute='rating') %}
+{% set avg_rating = (total_stars / review_count) if review_count else None %}
 
-<p><strong>Name:</strong> {{ user.firstname }} {{ user.lastname }}</p>
-<p><strong>Seller Email:</strong> {{ user.email }}</p>
-<p><strong>Seller Address:</strong> {{ user.address }}</p>
-
-<h3>Reviews</h3>
-<ul>
-    {% for review in reviews %}
-    <li>
-        Rating: {{ review.rating }} — "{{ review.body }}"
-    </li>
+<div class="hero-panel mb-4">
+  <div>
+    <div class="eyebrow mb-2">Seller Profile</div>
+    <h1 class="mb-1">{{ user.firstname }} {{ user.lastname }}</h1>
+    <p class="muted mb-0">Account #{{ user.id }}</p>
+    <p class="muted mb-0">Member since {{
+          user.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y')
+          if user.created_at else ('User #' ~ user.id)
+        }}</p>
+  </div>
+  <div class="text-right">
+    {% if avg_rating %}
+      <div class="text-uppercase small text-white-50">Average Rating</div>
+      <div class="h3 mb-0 text-white">{{ "%.2f"|format(avg_rating) }} / 5.00</div>
+      <div class="text-white-50 small">{{ review_count }} review{{ 's' if review_count != 1 else '' }}</div>
     {% else %}
-    <li>No reviews yet.</li>
-    {% endfor %}
-</ul>
+      <div class="text-white">No reviews yet</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-5">
+    <div class="card card-lift mb-4">
+      <div class="card-body">
+        <h4 class="mb-3">Contact</h4>
+        <p class="mb-2"><strong>Email:</strong> {{ user.email }}</p>
+        <p class="mb-0"><strong>Address:</strong> {{ user.address or 'Not provided' }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card card-lift mb-4">
+      <div class="card-body">
+        <h4 class="mb-3">Reviews</h4>
+        {% if reviews %}
+          <div class="list-group">
+            {% for review in reviews %}
+              <div class="list-group-item border-0 border-bottom">
+                <div class="d-flex justify-content-between">
+                  <strong>{{ review.firstname }} {{ review.lastname }}</strong>
+                  <small class="text-muted">
+                    {{ review.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if review.created_at else '—' }}
+                  </small>
+                </div>
+                <div class="text-warning mb-1">
+                  {% for _ in range(review.rating) %}&#9733;{% endfor %}
+                  {% for _ in range(5 - review.rating) %}&#9734;{% endfor %}
+                </div>
+                <p class="mb-0">{{ review.body }}</p>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted mb-0">No reviews yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}

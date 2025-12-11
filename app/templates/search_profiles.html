@@ -1,33 +1,64 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Search Profiles</h2>
+<div class="hero-panel mb-4">
+  <div>
+    <div class="eyebrow mb-2">Profiles</div>
+    <h1 class="mb-1">Search the community</h1>
+    <p class="muted mb-0">Find buyers or sellers by first or last name.</p>
+  </div>
+</div>
 
-<form method="get" action="{{ url_for('users.search_profiles') }}">
-    <input type="text" name="q" placeholder="Enter first or last name"
-           value="{{ query }}" class="form-control" style="max-width:300px;">
-    <button type="submit" class="btn btn-primary mt-2">Search</button>
-</form>
+<div class="card card-lift mb-4">
+  <div class="card-body">
+    <form method="get" action="{{ url_for('users.search_profiles') }}" class="form-inline flex-column flex-sm-row align-items-sm-end">
+      <div class="form-group w-100 w-sm-auto flex-grow-1 mr-sm-3 mb-2 mb-sm-0">
+        <label for="profile-search" class="sr-only">Search profiles</label>
+        <input id="profile-search"
+               type="text"
+               name="q"
+               placeholder="Enter first or last name"
+               value="{{ query }}"
+               class="form-control form-control-lg">
+      </div>
+      <button type="submit" class="btn btn-theme-primary px-4">Search</button>
+    </form>
+  </div>
+</div>
 
 {% if query %}
-    <h3 class="mt-4">Results for: "{{ query }}"</h3>
-
+  <div class="mb-4">
+    <h4 class="mb-3">Results for “{{ query }}”</h4>
     {% if results %}
-        <ul>
+      <div class="row">
         {% for user in results %}
-            <li>
-                {{ user.firstname }} {{ user.lastname }}
-                {% if user.is_seller %} (Seller) {% endif %}
-                
-                — <a href="{{ url_for('users.public_profile', user_id=user.id) }}">
-                    View Profile
-                  </a>
-            </li>
+          <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 shadow-sm border-0">
+              <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                  <h5 class="mb-0">{{ user.firstname }} {{ user.lastname }}</h5>
+                  {% if user.is_seller %}
+                    <span class="badge badge-success">Seller</span>
+                  {% endif %}
+                </div>
+                <p class="text-muted mb-3 small">
+                  Account #{{ user.id }}
+                </p>
+                <a href="{{ url_for('users.public_profile', user_id=user.id) }}"
+                   class="btn btn-sm btn-outline-primary mt-auto">
+                  View Profile
+                </a>
+              </div>
+            </div>
+          </div>
         {% endfor %}
-        </ul>
+      </div>
     {% else %}
-        <p>No matching profiles found.</p>
+      <div class="alert alert-warning mb-0">
+        No matching profiles found.
+      </div>
     {% endif %}
+  </div>
 {% endif %}
 
 {% endblock %}

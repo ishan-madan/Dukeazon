@@ -230,7 +230,11 @@ def account():
                 flash('You can only add up to $10,000 at a time.', 'danger')
                 return redirect(url_for('users.account'))
                    
+        MAX_DEPOSIT = 10000
         if balance_form.submit_add.data:
+            if amount > MAX_DEPOSIT:
+                flash(f'Deposits are limited to ${MAX_DEPOSIT:,.0f} per transaction.', 'danger')
+                return redirect(url_for('users.account'))
             User.add_balance(current_user.id, amount)
             flash(f'Added ${amount:.2f} to your balance.')
 
@@ -293,6 +297,16 @@ def search_profiles():
                OR LOWER(lastname) LIKE LOWER(:q)
         """, q=f"%{query}%")
         
-        results = [User(*row) for row in rows]
+        grouped = {}
+        for row in rows:
+            candidate = User(*row)
+            key = (candidate.firstname or '').strip().lower(), (candidate.lastname or '').strip().lower()
+            existing = grouped.get(key)
+            if not existing:
+                grouped[key] = candidate
+            else:
+                if not existing.is_seller and candidate.is_seller:
+                    grouped[key] = candidate
+        results = sorted(grouped.values(), key=lambda u: ((u.firstname or '').lower(), (u.lastname or '').lower()))
 
     return render_template('search_profiles.html', query=query, results=results)

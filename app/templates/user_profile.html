@@ -1,8 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>User Profile</h2>
 
-<p><strong>Name:</strong> {{ user.firstname }} {{ user.lastname }}</p>
-<p><strong>Account ID:</strong> {{ user.id }}</p>
+<div class="hero-panel mb-4">
+  <div>
+    <div class="eyebrow mb-2">User Profile</div>
+    <h1 class="mb-1">{{ user.firstname }} {{ user.lastname }}</h1>
+    <p class="muted mb-0">Member since {{
+          user.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y')
+          if user.created_at else ('User #' ~ user.id)
+        }}</p>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-6">
+    <div class="card card-lift">
+      <div class="card-body">
+        <h4 class="mb-3">Account Details</h4>
+        <p class="mb-2"><strong>Name:</strong> {{ user.firstname }} {{ user.lastname }}</p>
+        <p class="mb-0"><strong>Account Number:</strong> {{ user.id or 'Not provided' }}</p>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}

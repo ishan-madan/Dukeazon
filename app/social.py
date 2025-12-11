@@ -368,10 +368,30 @@ def my_reviews():
             min_rating=min_rating
         )
 
+    seller_feedback = []
+    if current_user.is_seller:
+        seller_feedback = app.db.execute(
+            """
+            SELECT sr.seller_review_id,
+                   sr.user_id,
+                   sr.rating,
+                   sr.body,
+                   sr.created_at,
+                   u.firstname,
+                   u.lastname
+            FROM seller_reviews sr
+            JOIN users u ON sr.user_id = u.id
+            WHERE sr.seller_id = :sid
+            ORDER BY sr.created_at DESC
+            """,
+            sid=current_user.id
+        )
+
     return render_template(
         'my_reviews.html',
         product_reviews=product_reviews,
         seller_reviews=seller_reviews,
+        seller_feedback=seller_feedback,
         filter_type=ftype,
         filter_min_rating=min_rating
     )

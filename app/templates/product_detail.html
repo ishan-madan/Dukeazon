@@ -266,7 +266,9 @@
                 <span class="badge badge-info ml-2">Most helpful</span>
               {% endif %}
             </div>
-            <small class="text-muted">{{ review.created_at }}</small>
+            <small class="text-muted">
+              {{ review.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if review.created_at else '—' }}
+            </small>
           </div>
           <p class="mb-1">{{ review.body }}</p>
           <div class="d-flex align-items-center">

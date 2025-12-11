@@ -67,7 +67,7 @@
                       <span class="badge" style="background-color:#6A0DAD;color:#fff;">Order Placed</span>
                     {% endif %}
                     {% if item.fulfilled_at %}
-                      <div class="small text-muted">{{ item.fulfilled_at }}</div>
+                      <div class="small text-muted">{{ item.fulfilled_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') }}</div>
                     {% endif %}
                   </div>
                 </td>

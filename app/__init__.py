@@ -8,6 +8,8 @@ from .db import DB
 login = LoginManager()
 login.login_view = 'users.login'
 
+from zoneinfo import ZoneInfo
+
 
 def create_app():
     app = Flask(__name__)
@@ -15,6 +17,8 @@ def create_app():
 
     app.db = DB(app)
     login.init_app(app)
+
+    app.jinja_env.globals['eastern'] = ZoneInfo("America/New_York")
 
     def _ordinal(n):
         if 10 <= n % 100 <= 20:

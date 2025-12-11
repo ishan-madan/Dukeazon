@@ -106,7 +106,9 @@
           {% endif %}
         </div>
       </td>
-      <td>{{ r.created_at }}</td>
+      <td>
+        {{ r.created_at.astimezone(eastern).strftime('%I:%M %p, %d/%m/%Y') if r.created_at else '—' }}
+      </td>
     </tr>
     {% endfor %}
   </tbody>
