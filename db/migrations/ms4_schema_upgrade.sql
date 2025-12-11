@@ -30,6 +30,18 @@ ALTER TABLE IF EXISTS Users
 ALTER TABLE IF EXISTS Users
     ALTER COLUMN balance SET DEFAULT 0;
 
+ALTER TABLE IF EXISTS Users
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ;
+
+UPDATE Users
+SET created_at = COALESCE(created_at, now());
+
+ALTER TABLE IF EXISTS Users
+    ALTER COLUMN created_at SET NOT NULL;
+
+ALTER TABLE IF EXISTS Users
+    ALTER COLUMN created_at SET DEFAULT now();
+
 -- ------------------------------------------------------------------
 -- Categories table + seed data (idempotent).
 -- ------------------------------------------------------------------

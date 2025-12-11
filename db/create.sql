@@ -9,7 +9,8 @@ CREATE TABLE Users (
     lastname VARCHAR(255) NOT NULL,
     address VARCHAR(255) NOT NULL,
     balance DECIMAL(12,2) NOT NULL DEFAULT 0,
-    is_seller BOOLEAN NOT NULL DEFAULT FALSE
+    is_seller BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE Categories (
