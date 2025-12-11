@@ -220,3 +220,17 @@ def fulfill_item(seller_id, item_id):
     else:
         flash("Marked item as fulfilled.", 'success')
     return redirect(url_for('cart.seller_orders_view', seller_id=seller_id))
+
+
+@bp.route('/seller/<int:seller_id>/fulfillment/<int:item_id>/status', methods=['POST'])
+@login_required
+def update_item_status(seller_id, item_id):
+    _ensure_owner(seller_id)
+    status = request.form.get('status')
+    try:
+        Order.update_item_status(seller_id, item_id, status)
+    except ValueError as exc:
+        flash(str(exc), 'danger')
+    else:
+        flash(f"Updated status to '{status}'.", 'success')
+    return redirect(url_for('cart.seller_orders_view', seller_id=seller_id))
