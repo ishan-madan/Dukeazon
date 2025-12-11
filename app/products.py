@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, render_template, request, abort, redirect, url_for, flash
+from flask import Blueprint, jsonify, render_template, request, abort, redirect, url_for, flash, current_app as app
 from flask_login import login_required, current_user
 
 from .models.category import Category
@@ -40,11 +40,22 @@ def detail(product_id):
     sellers = ProductSeller.get_active_by_product(product_id)
     uid = current_user.id if current_user.is_authenticated else None
     reviews = ProductReview.get_for_product(product_id, user_id=uid)
+    rating_summary = app.db.execute(
+        """
+        SELECT AVG(rating) AS avg_rating,
+               COUNT(*)    AS num_reviews
+        FROM product_reviews
+        WHERE product_id = :pid
+        """,
+        pid=product_id
+    )
+    rating_summary = rating_summary[0] if rating_summary else None
     suggestions = Product.similar(product, limit=4)
     return render_template('product_detail.html',
                            product=product,
                            sellers=sellers,
                            reviews=reviews,
+                           rating_summary=rating_summary,
                            suggestions=suggestions)
 
 

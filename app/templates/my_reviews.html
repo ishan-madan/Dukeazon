@@ -22,7 +22,10 @@
       <td>
         {% for _ in range(r.rating) %}&#9733;{% endfor %}
         {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
-        <small>({{ r.rating }})</small>
+        <small>{{ "%.1f"|format(r.rating) if r.rating % 1 else r.rating }}</small>
+        <div class="text-muted small">
+          {{ r.total_reviews_for_product }} review{{ 's' if r.total_reviews_for_product != 1 else '' }}
+        </div>
       </td>
       <td>{{ r.body }}</td>
       <td>{{ r.created_at }}</td>
@@ -61,7 +64,10 @@
       <td>
         {% for _ in range(r.rating) %}&#9733;{% endfor %}
         {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
-        <small>({{ r.rating }})</small>
+        <small>{{ "%.1f"|format(r.rating) if r.rating % 1 else r.rating }}</small>
+        <div class="text-muted small">
+          {{ r.total_reviews_for_seller }} review{{ 's' if r.total_reviews_for_seller != 1 else '' }}
+        </div>
       </td>
       <td>{{ r.body }}</td>
       <td>{{ r.created_at }}</td>

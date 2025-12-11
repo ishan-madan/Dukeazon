@@ -10,9 +10,8 @@
   {% for _ in range(stars) %}&#9733;{% endfor %}
   {% for _ in range(5 - stars) %}&#9734;{% endfor %}
   <small>
-    ({{ "%.2f"|format(rating_summary.avg_rating) }}
-     from {{ rating_summary.num_reviews }}
-     review{{ 's' if rating_summary.num_reviews != 1 else '' }})
+    {{ "%.2f"|format(rating_summary.avg_rating) }} avg •
+    {{ rating_summary.num_reviews }} review{{ 's' if rating_summary.num_reviews != 1 else '' }}
   </small>
 </p>
 {% else %}
@@ -52,7 +51,7 @@
         <div class="d-flex align-items-center">
           {% if current_user.is_authenticated %}
           <form method="post" action="{{ url_for('social.toggle_helpful_vote') }}" class="mr-2">
-            <input type="hidden" name="type" value="seller">
+            <input type="hidden" name="review_type" value="seller">
             <input type="hidden" name="review_id" value="{{ r.seller_review_id }}">
             <input type="hidden" name="next" value="{{ request.full_path }}">
             {% if r.user_voted %}

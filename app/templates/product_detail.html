@@ -15,6 +15,19 @@
       <span class="badge badge-info">{{ product.category_name }}</span>
       <p class="h4 mt-3 text-primary">${{ '%.2f'|format(product.price) }}</p>
       <p class="lead">{{ product.description }}</p>
+      {% if rating_summary and rating_summary.num_reviews > 0 %}
+      <div class="mb-2">
+        {% set stars = (rating_summary.avg_rating or 0)|round(0, 'floor')|int %}
+        {% for _ in range(stars) %}&#9733;{% endfor %}
+        {% for _ in range(5 - stars) %}&#9734;{% endfor %}
+        <small class="text-muted">
+          {{ "%.2f"|format(rating_summary.avg_rating) }} avg •
+          {{ rating_summary.num_reviews }} review{{ 's' if rating_summary.num_reviews != 1 else '' }}
+        </small>
+      </div>
+      {% else %}
+      <div class="text-muted mb-2">No reviews yet.</div>
+      {% endif %}
       {% if current_user.is_authenticated and product.creator_id == current_user.id %}
       <a class="btn btn-outline-primary mt-2" href="{{ url_for('products.edit', product_id=product.id) }}">Edit Product</a>
       {% endif %}
@@ -97,7 +110,7 @@
           <div class="d-flex align-items-center">
             {% if current_user.is_authenticated %}
             <form method="post" action="{{ url_for('social.toggle_helpful_vote') }}" class="mr-2">
-              <input type="hidden" name="type" value="product">
+              <input type="hidden" name="review_type" value="product">
               <input type="hidden" name="review_id" value="{{ review.review_id }}">
               <input type="hidden" name="next" value="{{ request.full_path }}">
               {% if review.user_voted %}

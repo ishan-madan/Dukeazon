@@ -111,19 +111,29 @@ def toggle_helpful_vote():
     """
     Mark or unmark a review (product or seller) as helpful for the current user.
     """
-    review_type = request.form.get('type')
-    review_id = request.form.get('review_id', type=int)
+    review_type = (request.form.get('review_type') or request.form.get('type') or '').strip().lower()
+    review_id_raw = request.form.get('review_id')
+    try:
+        review_id = int(review_id_raw)
+    except (TypeError, ValueError):
+        review_id = None
     action = request.form.get('action', 'add')
     next_url = request.form.get('next') or request.referrer or url_for('social.social_page')
 
-    if review_type not in ('product', 'seller') or not review_id:
+    if review_type not in ('product', 'seller') or review_id is None:
         flash("Invalid review selection.")
         return redirect(next_url)
 
     # Validate that the review exists
-    table = 'product_reviews' if review_type == 'product' else 'seller_reviews'
+    if review_type == 'product':
+        table = 'product_reviews'
+        id_col = 'product_review_id'
+    else:
+        table = 'seller_reviews'
+        id_col = 'seller_review_id'
+
     exists = app.db.execute(
-        f"SELECT 1 FROM {table} WHERE {table[:-1]}_id = :rid LIMIT 1",
+        f"SELECT 1 FROM {table} WHERE {id_col} = :rid LIMIT 1",
         rid=review_id
     )
     if not exists:
@@ -281,7 +291,8 @@ def my_reviews():
                pr.rating,
                pr.body,
                pr.created_at,
-               p.name AS product_name
+               p.name AS product_name,
+               (SELECT COUNT(*) FROM product_reviews WHERE product_id = pr.product_id) AS total_reviews_for_product
         FROM product_reviews pr
         JOIN products p ON pr.product_id = p.id
         WHERE pr.user_id = :uid
@@ -298,7 +309,8 @@ def my_reviews():
                sr.body,
                sr.created_at,
                u.firstname,
-               u.lastname
+               u.lastname,
+               (SELECT COUNT(*) FROM seller_reviews WHERE seller_id = sr.seller_id) AS total_reviews_for_seller
         FROM seller_reviews sr
         JOIN users u ON sr.seller_id = u.id
         WHERE sr.user_id = :uid
