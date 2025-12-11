@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app as app
 from flask_login import login_required, current_user
 from flask_wtf import FlaskForm
-from wtforms import StringField, DecimalField, IntegerField, SubmitField
+from wtforms import StringField, DecimalField, IntegerField, SubmitField, SelectField
 from wtforms.validators import DataRequired, NumberRange, ValidationError
 from .models.product_seller import ProductSeller
 from .models.product import Product
@@ -10,15 +10,19 @@ bp = Blueprint('product_seller', __name__, url_prefix='/sellers')
 
 
 class AddProductForm(FlaskForm):
-    product_id = IntegerField('Product ID', validators=[DataRequired(), NumberRange(min=1)])
+    product_id = SelectField('Product', choices=[], validators=[DataRequired()])
     price = DecimalField('Price', places=2, validators=[DataRequired(), NumberRange(min=0.01)])
     quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Add Product')
 
     def validate_product_id(self, field):
-        product = Product.get(field.data)
-        if not product:
-            raise ValidationError('Product ID does not exist.')
+        try:
+            product_id = int(field.data)
+            product = Product.get(product_id)
+            if not product:
+                raise ValidationError('Product does not exist.')
+        except (ValueError, TypeError):
+            raise ValidationError('Invalid product selection.')
 
 
 class UpdateQuantityForm(FlaskForm):
@@ -77,7 +81,31 @@ def seller_inventory(seller_id):
     """, sid=seller_id)
                                                              
     inventory = sorted(inventory, key=lambda itm: itm.get('product_id', 0))
+    
+    # Get all products grouped by category
+    all_products = app.db.execute("""
+        SELECT id, name, category_name
+        FROM Products
+        WHERE available = TRUE
+        ORDER BY category_name, name
+    """)
+    
+    # Create grouped choices for the form
+    categories_dict = {}
+    for product in all_products:
+        category = product.category_name or 'Other'
+        if category not in categories_dict:
+            categories_dict[category] = []
+        categories_dict[category].append((str(product.id), product.name))
+    
+    # Build choices list with categories as headers
+    choices = [('', '-- Select a Product --')]
+    for category in sorted(categories_dict.keys()):
+        choices.append((f'category_{category}', f'--- {category} ---'))
+        choices.extend(categories_dict[category])
+    
     add_form = AddProductForm()
+    add_form.product_id.choices = choices
 
                                                                               
     try:
@@ -85,7 +113,7 @@ def seller_inventory(seller_id):
     except Exception:
         analytics = None
 
-    return render_template('seller_inventory.html', inventory=inventory, add_form=add_form, analytics=analytics)
+    return render_template('seller_inventory.html', inventory=inventory, add_form=add_form, analytics=analytics, seller_id=seller_id)
 
 
 @bp.route('/<int:seller_id>/inventory/add', methods=['POST'])
@@ -98,17 +126,36 @@ def add_product(seller_id):
         flash('You do not have permission to perform this action.')
         return redirect(url_for('index.index'))
     
+    # Repopulate form choices
+    all_products = app.db.execute("""
+        SELECT id, name, category_name
+        FROM Products
+        WHERE available = TRUE
+        ORDER BY category_name, name
+    """)
     
+    categories_dict = {}
+    for product in all_products:
+        category = product.category_name or 'Other'
+        if category not in categories_dict:
+            categories_dict[category] = []
+        categories_dict[category].append((str(product.id), product.name))
+    
+    choices = [('new', '+ Add New Product')]
+    for category in sorted(categories_dict.keys()):
+        choices.extend(categories_dict[category])
     
     form = AddProductForm()
+    form.product_id.choices = choices
+    
     if form.validate_on_submit():
         try:
                                                       
             existing = ProductSeller.get_all_by_seller(seller_id)
-            if any(p.product_id == form.product_id.data for p in existing):
+            if any(p.product_id == int(form.product_id.data) for p in existing):
                 flash('This product is already in your inventory. Use Update to change quantity.', 'warning')
             else:
-                ProductSeller.add(seller_id, form.product_id.data, 
+                ProductSeller.add(seller_id, int(form.product_id.data), 
                                 form.price.data, form.quantity.data)
                                                                            
                 Product.set_available(form.product_id.data, True)
