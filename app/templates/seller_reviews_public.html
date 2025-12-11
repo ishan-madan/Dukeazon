@@ -40,11 +40,14 @@
         {% for _ in range(r.rating) %}&#9733;{% endfor %}
         {% for _ in range(5 - r.rating) %}&#9734;{% endfor %}
         <small>({{ r.rating }})</small>
+        {% if r.verified %}
+          <span class="badge badge-success ml-2">Verified buyer</span>
+        {% endif %}
       </td>
       <td>
         {{ r.body }}
         {% if r.helpful_rank and r.helpful_rank <= 3 and r.helpful_count > 0 %}
-          <span class="badge badge-info ml-2">Top helpful</span>
+          <span class="badge badge-info ml-2">Most helpful</span>
         {% endif %}
       </td>
       <td>

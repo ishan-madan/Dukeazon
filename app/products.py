@@ -22,6 +22,20 @@ def browse():
                               sort=sort,
                               available=True,
                               rating_threshold=rating_threshold)
+    # Build product rating summary for cards
+    rating_map = {}
+    if products:
+        ids = [p.id for p in products]
+        rows = app.db.execute(
+            """
+            SELECT product_id, AVG(rating)::float AS avg_rating, COUNT(*) AS review_count
+            FROM product_reviews
+            WHERE product_id = ANY(:ids)
+            GROUP BY product_id
+            """,
+            ids=ids
+        )
+        rating_map = {r.product_id: {"avg": float(r.avg_rating), "count": r.review_count} for r in rows}
     categories = Category.get_all()
 
     return render_template('products.html',
@@ -30,7 +44,8 @@ def browse():
                            selected_category=category_id,
                            query=query or '',
                            sort=sort,
-                           rating_threshold=rating_threshold)
+                           rating_threshold=rating_threshold,
+                           product_ratings=rating_map)
 
 
 @bp.route('/<int:product_id>', methods=['GET'])

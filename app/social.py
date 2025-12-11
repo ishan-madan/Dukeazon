@@ -44,7 +44,14 @@ def public_seller_reviews(seller_id):
                    u.firstname,
                    u.lastname,
                    COALESCE(SUM(rv.vote), 0) AS helpful_count,
-                   MAX(CASE WHEN rv.user_id = :uid THEN 1 ELSE 0 END) AS user_voted
+                   MAX(CASE WHEN rv.user_id = :uid THEN 1 ELSE 0 END) AS user_voted,
+                   MAX(CASE WHEN EXISTS (
+                           SELECT 1
+                           FROM Purchases pu
+                           JOIN ProductSeller ps ON pu.pid = ps.product_id
+                           WHERE pu.uid = sr.user_id
+                             AND ps.seller_id = sr.seller_id
+                       ) THEN 1 ELSE 0 END) AS verified
             FROM seller_reviews sr
             JOIN users u ON sr.user_id = u.id
             LEFT JOIN review_votes rv
@@ -486,7 +493,14 @@ def seller_review(seller_id):
                    u.firstname,
                    u.lastname,
                    COALESCE(SUM(rv.vote), 0) AS helpful_count,
-                   MAX(CASE WHEN rv.user_id = :uid THEN 1 ELSE 0 END) AS user_voted
+                   MAX(CASE WHEN rv.user_id = :uid THEN 1 ELSE 0 END) AS user_voted,
+                   MAX(CASE WHEN EXISTS (
+                           SELECT 1
+                           FROM Purchases pu
+                           JOIN ProductSeller ps ON pu.pid = ps.product_id
+                           WHERE pu.uid = sr.user_id
+                             AND ps.seller_id = sr.seller_id
+                       ) THEN 1 ELSE 0 END) AS verified
             FROM seller_reviews sr
             JOIN users u ON sr.user_id = u.id
             LEFT JOIN review_votes rv

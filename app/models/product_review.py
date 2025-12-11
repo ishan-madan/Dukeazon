@@ -3,7 +3,8 @@ from flask import current_app as app
 
 class ProductReview:
     def __init__(self, review_id, product_id, user_id, rating, body, created_at,
-                 firstname=None, lastname=None, helpful_count=0, user_voted=False, helpful_rank=None):
+                 firstname=None, lastname=None, helpful_count=0, user_voted=False,
+                 helpful_rank=None, verified=False):
         self.review_id = review_id
         self.product_id = product_id
         self.user_id = user_id
@@ -15,6 +16,7 @@ class ProductReview:
         self.helpful_count = helpful_count or 0
         self.user_voted = bool(user_voted)
         self.helpful_rank = helpful_rank
+        self.verified = bool(verified)
 
     @staticmethod
     def get_for_product(product_id, user_id=None, per_page=None, page=1, min_rating=None, sort='helpful'):
@@ -57,7 +59,11 @@ WITH aggregated AS (
            u.firstname,
            u.lastname,
            COALESCE(SUM(rv.vote), 0) AS helpful_count,
-           MAX(CASE WHEN rv.user_id = :uid THEN 1 ELSE 0 END) AS user_voted
+           MAX(CASE WHEN rv.user_id = :uid THEN 1 ELSE 0 END) AS user_voted,
+           MAX(CASE WHEN EXISTS (
+                     SELECT 1 FROM Purchases pu
+                     WHERE pu.uid = pr.user_id AND pu.pid = pr.product_id
+                   ) THEN 1 ELSE 0 END) AS verified
     FROM product_reviews pr
     JOIN Users u ON u.id = pr.user_id
     LEFT JOIN review_votes rv
@@ -81,7 +87,8 @@ SELECT product_review_id,
        lastname,
        helpful_count,
        COALESCE(user_voted, 0) AS user_voted,
-       helpful_rank
+       helpful_rank,
+       COALESCE(verified, 0) AS verified
 FROM ranked
 {order_clause}
 {limit_clause}
